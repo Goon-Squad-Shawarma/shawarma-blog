@@ -1,0 +1,92 @@
+import { Head, Link, useForm } from '@inertiajs/react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { usePage } from '@inertiajs/react'
+
+interface User {
+  id: number
+  name: string
+  email: string
+}
+
+interface Follower {
+  id: number
+  name: string
+  email: string
+}
+
+interface FollowersPageProps {
+  user: User
+  followers: Follower[]
+}
+
+export default function Followers({ user, followers }: FollowersPageProps) {
+  const { auth } = usePage().props
+  const { post, delete: destroy, processing } = useForm()
+
+  const handleFollow = (followerId: number) => {
+    post(`/users/${followerId}/follow`)
+  }
+
+  const handleUnfollow = (followerId: number) => {
+    destroy(`/users/${followerId}/unfollow`)
+  }
+
+  return (
+    <>
+      <Head title={`${user.name}'s Followers`} />
+
+      <div className="space-y-8">
+        {/* Header */}
+        <div>
+          <Link href={`/users/${user.id}`} className="text-blue-600 hover:underline">
+            ← Back to {user.name}
+          </Link>
+          <h1 className="text-3xl font-bold tracking-tight mt-4">{user.name}'s Followers</h1>
+          <p className="text-muted-foreground mt-2">{followers.length} follower{followers.length !== 1 ? 's' : ''}</p>
+        </div>
+
+        {/* Followers List */}
+        {followers.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {followers.map((follower: Follower) => (
+              <Card key={follower.id}>
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarFallback>{follower.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <CardTitle className="text-lg">{follower.name}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground">{follower.email}</p>
+                </CardContent>
+                <CardFooter className="gap-2">
+                  <Link href={`/users/${follower.id}`} className="flex-1">
+                    <Button variant="outline" size="sm" className="w-full">
+                      View Profile
+                    </Button>
+                  </Link>
+                  {auth?.user?.id !== follower.id && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleFollow(follower.id)}
+                      disabled={processing}
+                    >
+                      Follow
+                    </Button>
+                  )}
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-muted-foreground py-12">No followers yet</p>
+        )}
+      </div>
+    </>
+  )
+}
