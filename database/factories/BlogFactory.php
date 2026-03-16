@@ -3,8 +3,8 @@
 namespace Database\Factories;
 
 use App\Enums\PostVisibility;
-use App\Models\User;
 use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -21,15 +21,15 @@ class BlogFactory extends Factory
     public function definition(): array
     {
         $title = fake()->sentence();
-        
+
         return [
             'user_id' => User::factory(),
             'organization_id' => null,
             'title' => $title,
-            'slug' => Str::slug($title) . '-' . Str::random(5),
+            'slug' => Str::slug($title).'-'.Str::random(5),
             'subtitle' => fake()->sentence(),
             'content' => fake()->paragraphs(5, true),
-            'banner_url' => fake()->imageUrl(1200, 600),
+            'banner_url' => 'https://picsum.photos/seed/'.Str::random(8).'/1200/600',
             'published_at' => fake()->dateTimeBetween('-1 month', 'now'),
             'visibility' => PostVisibility::PUBLIC,
             'reading_time' => fake()->numberBetween(3, 15),
@@ -75,6 +75,4 @@ class BlogFactory extends Factory
             'visibility' => PostVisibility::PRIVATE,
         ]);
     }
-
-
 }

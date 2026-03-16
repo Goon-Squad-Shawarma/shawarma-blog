@@ -1,9 +1,12 @@
-import { Head, Link, useForm } from '@inertiajs/react'
+import { Head, Link, useForm, usePage } from '@inertiajs/react'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { show as usersShow } from '@/routes/users'
+import { show as blogsShow } from '@/routes/blogs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { usePage } from '@inertiajs/react'
 
 interface User {
   id: number
@@ -14,6 +17,7 @@ interface User {
 
 interface Blog {
   id: number
+  slug: string
   title: string
   subtitle: string
   published_at: string
@@ -40,11 +44,15 @@ export default function UserShow({ user, isFollowing }: UserShowProps) {
 
   const isCurrentUser = auth?.user?.id === user.id
 
+  const breadcrumbs: BreadcrumbItem[] = [
+    { title: user.name, href: usersShow(user).url },
+  ]
+
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={user.name} />
 
-      <div className="space-y-8">
+      <div className="p-4 space-y-8">
         {/* User Header */}
         <Card>
           <CardHeader>
@@ -119,7 +127,7 @@ export default function UserShow({ user, isFollowing }: UserShowProps) {
                 <Card key={blog.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <CardTitle className="line-clamp-2">
-                      <Link href={`/blogs/${blog.id}`}>{blog.title}</Link>
+                      <Link href={blogsShow(blog).url}>{blog.title}</Link>
                     </CardTitle>
                     <CardDescription className="line-clamp-2">
                       {blog.subtitle}
@@ -131,7 +139,7 @@ export default function UserShow({ user, isFollowing }: UserShowProps) {
                     </p>
                   </CardContent>
                   <CardFooter>
-                    <Link href={`/blogs/${blog.id}`} className="w-full">
+                    <Link href={blogsShow(blog).url} className="w-full">
                       <Button variant="ghost" size="sm" className="w-full">
                         Read More →
                       </Button>
@@ -145,6 +153,6 @@ export default function UserShow({ user, isFollowing }: UserShowProps) {
           )}
         </div>
       </div>
-    </>
+    </AppLayout>
   )
 }

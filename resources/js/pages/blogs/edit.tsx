@@ -1,22 +1,32 @@
-import { Head, useForm } from '@inertiajs/react'
+import { Head, Link, useForm } from '@inertiajs/react'
 import { FormEvent } from 'react'
+import { SerializedEditorState } from 'lexical'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { index as blogsIndex, show as blogsShow, edit as blogsEdit, update as blogsUpdate } from '@/routes/blogs'
+import { Editor } from '@/components/blocks/editor-00/editor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Separator } from '@/components/ui/separator'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import InputError from '@/components/input-error'
+import TagSelector from '@/components/tag-selector'
+import DateTimePicker from '@/components/calendar'
+import { format } from 'date-fns'
+import { CalendarIcon } from 'lucide-react'
 
 interface Tag {
   id: number
   name: string
+  slug: string
 }
 
 interface Blog {
   id: number
   title: string
+  slug: string
   subtitle: string
   content: string
   banner_url: string | null
@@ -25,24 +35,26 @@ interface Blog {
   tags: Tag[]
 }
 
-interface AllTags {
-  id: number
-  name: string
-}
-
 interface BlogEditProps {
   blog: Blog
-  tags: AllTags[]
+  tags: Tag[]
 }
 
 export default function BlogEdit({ blog, tags }: BlogEditProps) {
   const selectedTagIds = blog.tags.map((tag: Tag) => tag.id)
 
+  let initialEditorState: SerializedEditorState | undefined
+  try {
+    initialEditorState = JSON.parse(blog.content)
+  } catch {
+    initialEditorState = undefined
+  }
+
   const { data, setData, patch, processing, errors } = useForm({
     title: blog.title,
     subtitle: blog.subtitle,
     content: blog.content,
-    banner_url: blog.banner_url,
+    banner_url: blog.banner_url ?? '',
     visibility: blog.visibility,
     publish_date: blog.publish_date,
     tags: selectedTagIds,
@@ -50,82 +62,73 @@ export default function BlogEdit({ blog, tags }: BlogEditProps) {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    patch(`/blogs/${blog.id}`)
+    patch(blogsUpdate({ slug: blog.slug }).url)
   }
 
-  const handleTagToggle = (tagId: number) => {
-    setData('tags', data.tags.includes(tagId)
-      ? data.tags.filter((id: number) => id !== tagId)
-      : [...data.tags, tagId]
-    )
-  }
+  const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Blogs', href: blogsIndex().url },
+    { title: blog.title, href: blogsShow(blog).url },
+    { title: 'Edit', href: blogsEdit(blog).url },
+  ]
 
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={`Edit "${blog.title}"`} />
 
-      <div className="max-w-2xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Edit Blog</h1>
-          <p className="text-muted-foreground mt-2">Update your blog post</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
+      <form onSubmit={handleSubmit} className="flex h-[calc(100svh-4rem)] overflow-hidden">
+        {/* Editor — main canvas */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-6">
+          <div className="space-y-1">
+            <input
               id="title"
               value={data.title}
               onChange={(e) => setData('title', e.target.value)}
-              placeholder="Blog title"
+              placeholder="Post title…"
+              className="w-full border-none bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/40"
             />
-            <InputError message={errors.title} />
-          </div>
-
-          {/* Subtitle */}
-          <div className="space-y-2">
-            <Label htmlFor="subtitle">Subtitle</Label>
-            <Input
+            {errors.title && <InputError message={errors.title} />}
+            <input
               id="subtitle"
               value={data.subtitle}
               onChange={(e) => setData('subtitle', e.target.value)}
-              placeholder="Brief summary"
+              placeholder="Subtitle…"
+              className="w-full border-none bg-transparent text-lg text-muted-foreground outline-none placeholder:text-muted-foreground/40"
             />
-            <InputError message={errors.subtitle} />
+            {errors.subtitle && <InputError message={errors.subtitle} />}
           </div>
 
-          {/* Content */}
-          <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
-            <Textarea
-              id="content"
-              value={data.content}
-              onChange={(e) => setData('content', e.target.value)}
-              placeholder="Write your blog content..."
-              rows={10}
-            />
-            <InputError message={errors.content} />
-          </div>
+          <Separator />
 
-          {/* Banner URL */}
-          <div className="space-y-2">
-            <Label htmlFor="banner">Banner Image URL</Label>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <Editor
+              editorSerializedState={initialEditorState}
+              onSerializedChange={(value: SerializedEditorState) =>
+                setData('content', JSON.stringify(value))
+              }
+            />
+            {errors.content && <InputError message={errors.content} className="mt-2" />}
+          </div>
+        </div>
+
+        {/* Sidebar — metadata */}
+        <aside className="flex w-72 shrink-0 flex-col gap-6 border-l p-6">
+          <div className="space-y-1.5">
+            <Label htmlFor="banner_url">Banner URL</Label>
             <Input
-              id="banner"
-              value={data.banner_url || ''}
+              id="banner_url"
+              type="url"
+              value={data.banner_url}
               onChange={(e) => setData('banner_url', e.target.value)}
-              placeholder="https://..."
+              placeholder="https://…"
             />
             <InputError message={errors.banner_url} />
           </div>
 
-          {/* Visibility */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="visibility">Visibility</Label>
-            <Select value={data.visibility} onValueChange={(value) => setData('visibility', value as any)}>
+            <Select value={data.visibility} onValueChange={(value) => setData('visibility', value as 'public' | 'private')}>
               <SelectTrigger id="visibility">
-                <SelectValue placeholder="Select visibility" />
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="public">Public</SelectItem>
@@ -135,53 +138,55 @@ export default function BlogEdit({ blog, tags }: BlogEditProps) {
             <InputError message={errors.visibility} />
           </div>
 
-          {/* Publish Date */}
-          <div className="space-y-2">
-            <Label htmlFor="publish_date">Publish Date</Label>
-            <Input
-              id="publish_date"
-              type="datetime-local"
-              value={data.publish_date}
-              onChange={(e) => setData('publish_date', e.target.value)}
-            />
+          <div className="space-y-1.5">
+            <Label>Publish date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 size-4" />
+                  {data.publish_date ? (
+                    format(new Date(data.publish_date), 'PPP HH:mm')
+                  ) : (
+                    <span className="text-muted-foreground">Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <DateTimePicker
+                  selected={data.publish_date ? new Date(data.publish_date) : undefined}
+                  onSelect={(date) =>
+                    setData('publish_date', date ? format(date, 'yyyy-MM-dd HH:mm:ss') : '')
+                  }
+                />
+              </PopoverContent>
+            </Popover>
             <InputError message={errors.publish_date} />
           </div>
 
-          {/* Tags */}
-          <div className="space-y-3">
+          <div className="space-y-1.5">
             <Label>Tags</Label>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="grid grid-cols-2 gap-3">
-                  {tags.map((tag: AllTags) => (
-                    <div key={tag.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`tag-${tag.id}`}
-                        checked={data.tags.includes(tag.id)}
-                        onCheckedChange={() => handleTagToggle(tag.id)}
-                      />
-                      <Label htmlFor={`tag-${tag.id}`} className="cursor-pointer">
-                        {tag.name}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <TagSelector
+              value={data.tags}
+              onChange={(ids) => setData('tags', ids)}
+              defaultTags={tags}
+            />
             <InputError message={errors.tags} />
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3">
-            <Button type="submit" disabled={processing}>
-              {processing ? 'Saving...' : 'Save Changes'}
+          <div className="mt-auto flex flex-col gap-2">
+            <Button type="submit" disabled={processing} className="w-full">
+              {processing ? 'Saving…' : 'Save Changes'}
             </Button>
-            <Button type="button" variant="outline" onClick={() => window.history.back()}>
-              Cancel
+            <Button asChild type="button" variant="outline" className="w-full">
+              <Link href={blogsShow(blog).url}>Cancel</Link>
             </Button>
           </div>
-        </form>
-      </div>
-    </>
+        </aside>
+      </form>
+    </AppLayout>
   )
 }

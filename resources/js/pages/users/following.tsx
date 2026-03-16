@@ -1,9 +1,11 @@
-import { Head, Link } from '@inertiajs/react'
+import { Head, Link, usePage } from '@inertiajs/react'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { show as usersShow, following as usersFollowing } from '@/routes/users'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { usePage } from '@inertiajs/react'
 
 interface User {
   id: number
@@ -39,11 +41,16 @@ export default function Following({ user, following }: FollowingPageProps) {
   const users = following.filter((item) => item.following_user)
   const organizations = following.filter((item) => item.following_organization)
 
+  const breadcrumbs: BreadcrumbItem[] = [
+    { title: user.name, href: usersShow(user).url },
+    { title: 'Following', href: usersFollowing(user).url },
+  ]
+
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={`${user.name}'s Following`} />
 
-      <div className="space-y-8">
+      <div className="p-4 space-y-8">
         {/* Header */}
         <div>
           <Link href={`/users/${user.id}`} className="text-blue-600 hover:underline">
@@ -121,6 +128,6 @@ export default function Following({ user, following }: FollowingPageProps) {
           <p className="text-center text-muted-foreground py-12">Not following anyone yet</p>
         )}
       </div>
-    </>
+    </AppLayout>
   )
 }

@@ -1,8 +1,10 @@
-import { Head, Link, useForm } from '@inertiajs/react'
+import { Head, Link, useForm, usePage } from '@inertiajs/react'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { show as usersShow, followers as usersFollowers } from '@/routes/users'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { usePage } from '@inertiajs/react'
 
 interface User {
   id: number
@@ -33,11 +35,16 @@ export default function Followers({ user, followers }: FollowersPageProps) {
     destroy(`/users/${followerId}/unfollow`)
   }
 
+  const breadcrumbs: BreadcrumbItem[] = [
+    { title: user.name, href: usersShow(user).url },
+    { title: 'Followers', href: usersFollowers(user).url },
+  ]
+
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={`${user.name}'s Followers`} />
 
-      <div className="space-y-8">
+      <div className="p-4 space-y-8">
         {/* Header */}
         <div>
           <Link href={`/users/${user.id}`} className="text-blue-600 hover:underline">
@@ -87,6 +94,6 @@ export default function Followers({ user, followers }: FollowersPageProps) {
           <p className="text-center text-muted-foreground py-12">No followers yet</p>
         )}
       </div>
-    </>
+    </AppLayout>
   )
 }

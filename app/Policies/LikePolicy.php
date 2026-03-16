@@ -12,7 +12,6 @@ class LikePolicy
      */
     public function create(User $user): bool
     {
-        // All authenticated users can like
         return true;
     }
 
@@ -21,25 +20,6 @@ class LikePolicy
      */
     public function delete(User $user, Like $like): bool
     {
-        // Only the user who created the like can delete it
         return $like->user_id === $user->id;
-    }
-
-    /**
-     * Determine if the user can delete any like (for moderation).
-     */
-    public function deleteAny(User $user, Like $like): bool
-    {
-        // User can delete their own like
-        if ($like->user_id === $user->id) {
-            return true;
-        }
-
-        // Blog author can remove likes from their blog
-        if ($like->blog->user_id === $user->id) {
-            return true;
-        }
-
-        return false;
     }
 }

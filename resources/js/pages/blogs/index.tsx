@@ -1,8 +1,14 @@
-import { Head, Link, usePage } from '@inertiajs/react'
+import { Head, Link, router, usePage } from '@inertiajs/react'
+import { FileTextIcon } from 'lucide-react'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { index as blogsIndex, show as blogsShow } from '@/routes/blogs'
+import { show as usersShow } from '@/routes/users'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'
 
 interface Tag {
@@ -14,6 +20,7 @@ interface Tag {
 interface Blog {
   id: number
   title: string
+  slug: string
   subtitle: string
   content: string
   banner_url: string | null
@@ -31,29 +38,22 @@ interface PaginationData {
 
 interface BlogIndexProps {
   blogs: PaginationData
+  tags: Tag[]
+  filters: { search?: string; tags?: string[]; author?: string; organization?: string }
 }
 
-export default function BlogIndex({ blogs }: BlogIndexProps) {
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Blogs', href: blogsIndex().url },
+]
+
+export default function BlogIndex({ blogs, tags, filters }: BlogIndexProps) {
   const { auth } = usePage().props
 
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs} showSearch={true}>
       <Head title="Blogs" />
       
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Blogs</h1>
-            <p className="text-muted-foreground mt-2">Discover stories from our community</p>
-          </div>
-          {auth?.user && (
-            <Link href="/blogs/create">
-              <Button>Create Blog</Button>
-            </Link>
-          )}
-        </div>
-
+      <div className="p-4 space-y-8">
         {/* Blogs Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {blogs.data.map((blog: Blog) => (
@@ -74,15 +74,34 @@ export default function BlogIndex({ blogs }: BlogIndexProps) {
                 {blog.tags?.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">
                     {blog.tags.slice(0, 3).map((tag) => (
-                      <Badge key={tag.id} variant="secondary" className="text-xs">
-                        {tag.name}
-                      </Badge>
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => {
+                          const currentTags = filters.tags ?? []
+                          const merged = currentTags.includes(tag.slug) ? currentTags : [...currentTags, tag.slug]
+                          router.get(blogsIndex().url, {
+                            ...(filters.search && { search: filters.search }),
+                            ...(filters.author && { author: filters.author }),
+                            ...(filters.organization && { organization: filters.organization }),
+                            tags: merged,
+                          })
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Badge
+                          variant={filters.tags?.includes(tag.slug) ? 'default' : 'secondary'}
+                          className="text-xs transition-colors hover:opacity-80"
+                        >
+                          {tag.name}
+                        </Badge>
+                      </button>
                     ))}
                   </div>
                 )}
 
                 <CardTitle className="line-clamp-2 hover:underline">
-                  <Link href={`/blogs/${blog.id}`}>{blog.title}</Link>
+                  <Link href={blogsShow({ slug: blog.slug }).url}>{blog.title}</Link>
                 </CardTitle>
 
                 <CardDescription className="line-clamp-2">
@@ -97,7 +116,12 @@ export default function BlogIndex({ blogs }: BlogIndexProps) {
                     <AvatarFallback>{blog.user.name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{blog.user.name}</p>
+                    <Link
+                      href={usersShow({ id: blog.user.id }).url}
+                      className="text-sm font-medium truncate block hover:underline"
+                    >
+                      {blog.user.name}
+                    </Link>
                     <p className="text-xs text-muted-foreground">
                       {new Date(blog.published_at).toLocaleDateString()}
                     </p>
@@ -107,7 +131,7 @@ export default function BlogIndex({ blogs }: BlogIndexProps) {
 
               <CardFooter className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>{blog.reading_time} min read</span>
-                <Link href={`/blogs/${blog.id}`}>
+                <Link href={blogsShow({ slug: blog.slug }).url}>
                   <Button variant="ghost" size="sm">
                     Read More →
                   </Button>
@@ -119,14 +143,24 @@ export default function BlogIndex({ blogs }: BlogIndexProps) {
 
         {/* Empty state */}
         {blogs.data.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">No blogs found</p>
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <FileTextIcon />
+              </EmptyMedia>
+              <EmptyTitle>No blogs found</EmptyTitle>
+              <EmptyDescription>
+                {auth?.user ? 'Be the first to share something with the community.' : 'Check back later for new posts.'}
+              </EmptyDescription>
+            </EmptyHeader>
             {auth?.user && (
-              <Link href="/blogs/create">
-                <Button>Create the first blog</Button>
-              </Link>
+              <EmptyContent>
+                <Button asChild>
+                  <Link href={blogsIndex().url + '/create'}>Create the first blog</Link>
+                </Button>
+              </EmptyContent>
             )}
-          </div>
+          </Empty>
         )}
 
         {/* Pagination */}
@@ -161,6 +195,6 @@ export default function BlogIndex({ blogs }: BlogIndexProps) {
           </div>
         )}
       </div>
-    </>
+    </AppLayout>
   )
 }

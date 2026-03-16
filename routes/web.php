@@ -4,6 +4,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\OrganizationController;
+use App\Http\Controllers\TagController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -15,13 +16,15 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
-Route::get('dashboard', function () {
-    return Inertia::render('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::redirect('dashboard', '/blogs')->name('dashboard');
 
 // Public blog routes
 Route::get('blogs', [BlogController::class, 'index'])->name('blogs.index');
-Route::get('blogs/{blog}', [BlogController::class, 'show'])->name('blogs.show');
+Route::get('blogs/authors', [BlogController::class, 'authors'])->name('blogs.authors');
+
+// Tags
+Route::get('tags/search', [TagController::class, 'search'])->name('tags.search');
+Route::post('tags', [TagController::class, 'store'])->name('tags.store')->middleware('auth');
 
 // Authenticated blog routes
 Route::middleware('auth')->group(function () {
@@ -44,6 +47,8 @@ Route::middleware('auth')->group(function () {
     // Likes
     Route::post('blogs/{blog}/like', [LikeController::class, 'store'])->name('likes.store');
     Route::delete('blogs/{blog}/like', [LikeController::class, 'destroy'])->name('likes.destroy');
+    Route::post('comments/{comment}/like', [LikeController::class, 'storeForComment'])->name('comment-likes.store');
+    Route::delete('comments/{comment}/like', [LikeController::class, 'destroyForComment'])->name('comment-likes.destroy');
 
     // Organizations
     Route::get('organizations/create', [OrganizationController::class, 'create'])->name('organizations.create');
@@ -59,6 +64,9 @@ Route::middleware('auth')->group(function () {
     Route::post('users/{user}/follow', [UserController::class, 'follow'])->name('users.follow');
     Route::delete('users/{user}/follow', [UserController::class, 'unfollow'])->name('users.unfollow');
 });
+
+// Public blog wildcard (after static routes to avoid swallowing 'create')
+Route::get('blogs/{blog}', [BlogController::class, 'show'])->name('blogs.show');
 
 // Public user routes
 Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');

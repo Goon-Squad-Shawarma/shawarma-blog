@@ -34,7 +34,7 @@ import { cn, toUrl } from '@/lib/utils';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
-import { dashboard } from '@/routes';
+import { index as blogsIndex } from '@/routes/blogs';
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
@@ -42,8 +42,8 @@ type Props = {
 
 const mainNavItems: NavItem[] = [
     {
-        title: 'Dashboard',
-        href: dashboard(),
+        title: 'Blogs',
+        href: blogsIndex(),
         icon: LayoutGrid,
     },
 ];
@@ -135,7 +135,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
                     </div>
 
                     <Link
-                        href={dashboard()}
+                        href={blogsIndex().url}
                         prefetch
                         className="flex items-center space-x-2"
                     >

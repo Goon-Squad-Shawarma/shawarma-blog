@@ -1,41 +1,55 @@
 import { Head, Link, useForm } from '@inertiajs/react'
 import { FormEvent } from 'react'
+import { SerializedEditorState } from 'lexical'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { index as blogsIndex, create as blogsCreate } from '@/routes/blogs'
+import { Editor } from '@/components/blocks/editor-00/editor'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Separator } from '@/components/ui/separator'
 import InputError from '@/components/input-error'
+import { format } from 'date-fns'
+import { CalendarIcon } from 'lucide-react'
+import DateTimePicker from '@/components/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import TagSelector from '@/components/tag-selector'
 
 interface Tag {
   id: number
   name: string
+  slug: string
 }
 
 interface BlogCreateProps {
   tags: Tag[]
 }
 
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Blogs', href: blogsIndex().url },
+    { title: 'Create Post', href: blogsCreate().url },
+]
+
 export default function BlogCreate({ tags }: BlogCreateProps) {
-  const { data, setData, post, processing, errors } = useForm({
+  const { data, setData, post, processing, errors } = useForm<{
+    title: string
+    subtitle: string
+    content: string
+    banner_url: string
+    visibility: string
+    published_at: string
+    tags: number[]
+  }>({
     title: '',
     subtitle: '',
     content: '',
     banner_url: '',
     visibility: 'public',
     published_at: '',
-    tags: [] as number[],
+    tags: [],
   })
-
-  const handleTagToggle = (tagId: number) => {
-    setData('tags', 
-      data.tags.includes(tagId)
-        ? data.tags.filter(id => id !== tagId)
-        : [...data.tags, tagId]
-    )
-  }
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -43,140 +57,121 @@ export default function BlogCreate({ tags }: BlogCreateProps) {
   }
 
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Create Blog" />
 
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Create Blog Post</h1>
-          <p className="text-muted-foreground mt-2">Share your thoughts with the community</p>
+      <form onSubmit={handleSubmit} className="flex h-[calc(100svh-4rem)] overflow-hidden">
+        {/* Editor — main canvas */}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4 p-6">
+          <div className="space-y-1">
+            <input
+              id="title"
+              value={data.title}
+              onChange={(e) => setData('title', e.target.value)}
+              placeholder="Post title…"
+              className="w-full border-none bg-transparent text-4xl font-bold tracking-tight outline-none placeholder:text-muted-foreground/40"
+            />
+            {errors.title && <InputError message={errors.title} />}
+            <input
+              id="subtitle"
+              value={data.subtitle}
+              onChange={(e) => setData('subtitle', e.target.value)}
+              placeholder="Subtitle…"
+              className="w-full border-none bg-transparent text-lg text-muted-foreground outline-none placeholder:text-muted-foreground/40"
+            />
+            {errors.subtitle && <InputError message={errors.subtitle} />}
+          </div>
+
+          <Separator />
+
+          <div className="flex min-h-0 flex-1 flex-col">
+            <Editor
+              onSerializedChange={(value: SerializedEditorState) =>
+                setData('content', JSON.stringify(value))
+              }
+            />
+            {errors.content && <InputError message={errors.content} className="mt-2" />}
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>New Blog</CardTitle>
-            <CardDescription>Fill in the details below to create a new blog post</CardDescription>
-          </CardHeader>
+        {/* Sidebar — metadata */}
+        <aside className="flex w-72 shrink-0 flex-col gap-6 border-l p-6">
+          <div className="space-y-1.5">
+            <Label htmlFor="banner_url">Banner URL</Label>
+            <Input
+              id="banner_url"
+              type="url"
+              value={data.banner_url}
+              onChange={(e) => setData('banner_url', e.target.value)}
+              placeholder="https://…"
+            />
+            <InputError message={errors.banner_url} />
+          </div>
 
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Title */}
-              <div className="space-y-2">
-                <Label htmlFor="title">Title *</Label>
-                <Input
-                  id="title"
-                  value={data.title}
-                  onChange={(e) => setData('title', e.target.value)}
-                  placeholder="Enter blog title"
-                  className={errors.title ? 'border-red-500' : ''}
-                />
-                <InputError message={errors.title} />
-              </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="visibility">Visibility</Label>
+            <Select value={data.visibility} onValueChange={(value) => setData('visibility', value)}>
+              <SelectTrigger id="visibility">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="public">Public</SelectItem>
+                <SelectItem value="private">Private</SelectItem>
+              </SelectContent>
+            </Select>
+            <InputError message={errors.visibility} />
+          </div>
 
-              {/* Subtitle */}
-              <div className="space-y-2">
-                <Label htmlFor="subtitle">Subtitle</Label>
-                <Input
-                  id="subtitle"
-                  value={data.subtitle}
-                  onChange={(e) => setData('subtitle', e.target.value)}
-                  placeholder="Brief description"
-                />
-                <InputError message={errors.subtitle} />
-              </div>
-
-              {/* Content */}
-              <div className="space-y-2">
-                <Label htmlFor="content">Content *</Label>
-                <Textarea
-                  id="content"
-                  value={data.content}
-                  onChange={(e) => setData('content', e.target.value)}
-                  placeholder="Write your blog content here..."
-                  rows={12}
-                  className={errors.content ? 'border-red-500' : ''}
-                />
-                <InputError message={errors.content} />
-              </div>
-
-              {/* Banner URL */}
-              <div className="space-y-2">
-                <Label htmlFor="banner_url">Banner Image URL</Label>
-                <Input
-                  id="banner_url"
-                  type="url"
-                  value={data.banner_url}
-                  onChange={(e) => setData('banner_url', e.target.value)}
-                  placeholder="https://..."
-                />
-                <InputError message={errors.banner_url} />
-              </div>
-
-              {/* Visibility */}
-              <div className="space-y-2">
-                <Label htmlFor="visibility">Visibility</Label>
-                <Select value={data.visibility} onValueChange={(value) => setData('visibility', value)}>
-                  <SelectTrigger id="visibility">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="public">Public</SelectItem>
-                    <SelectItem value="private">Private</SelectItem>
-                  </SelectContent>
-                </Select>
-                <InputError message={errors.visibility} />
-              </div>
-
-              {/* Published At */}
-              <div className="space-y-2">
-                <Label htmlFor="published_at">Publish Date (leave empty to save as draft)</Label>
-                <Input
-                  id="published_at"
-                  type="datetime-local"
-                  value={data.published_at}
-                  onChange={(e) => setData('published_at', e.target.value)}
-                />
-                <InputError message={errors.published_at} />
-              </div>
-
-              {/* Tags */}
-              <div className="space-y-3">
-                <Label>Tags</Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {tags.map((tag: Tag) => (
-                    <div key={tag.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`tag-${tag.id}`}
-                        checked={data.tags.includes(tag.id)}
-                        onCheckedChange={() => handleTagToggle(tag.id)}
-                      />
-                      <label
-                        htmlFor={`tag-${tag.id}`}
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                      >
-                        {tag.name}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                <InputError message={errors.tags} />
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
-                <Button type="submit" disabled={processing}>
-                  {processing ? 'Creating...' : 'Create Blog'}
+          <div className="space-y-1.5">
+            <Label>Publish date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-start text-left font-normal"
+                >
+                  <CalendarIcon className="mr-2 size-4" />
+                  {data.published_at ? (
+                    format(new Date(data.published_at), 'PPP HH:mm')
+                  ) : (
+                    <span className="text-muted-foreground">Pick a date</span>
+                  )}
                 </Button>
-                <Link href="/blogs">
-                  <Button type="button" variant="outline">
-                    Cancel
-                  </Button>
-                </Link>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <DateTimePicker
+                  selected={data.published_at ? new Date(data.published_at) : undefined}
+                  onSelect={(date) =>
+                    setData('published_at', date ? format(date, 'yyyy-MM-dd HH:mm:ss') : '')
+                  }
+                />
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">Leave empty to save as draft</p>
+            <InputError message={errors.published_at} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Tags</Label>
+            <TagSelector
+              value={data.tags}
+              onChange={(ids) => setData('tags', ids)}
+              defaultTags={tags}
+            />
+            <InputError message={errors.tags} />
+          </div>
+
+          <div className="mt-auto flex flex-col gap-2">
+            <Button type="submit" disabled={processing} className="w-full">
+              {processing ? 'Publishing…' : 'Publish'}
+            </Button>
+            <Button asChild type="button" variant="outline" className="w-full">
+              <Link href={blogsIndex().url}>Cancel</Link>
+            </Button>
+          </div>
+        </aside>
+      </form>
+    </AppLayout>
   )
 }

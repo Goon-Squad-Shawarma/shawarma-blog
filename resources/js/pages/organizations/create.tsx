@@ -1,5 +1,8 @@
 import { Head, useForm } from '@inertiajs/react'
 import { FormEvent } from 'react'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { index as organizationsIndex, create as organizationsCreate } from '@/routes/organizations'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,11 +22,16 @@ export default function OrganizationCreate({}: OrganizationCreateProps) {
     post('/organizations')
   }
 
+  const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Organizations', href: organizationsIndex().url },
+    { title: 'Create Organization', href: organizationsCreate().url },
+  ]
+
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Create Organization" />
 
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className="max-w-2xl mx-auto space-y-8 p-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Create Organization</h1>
           <p className="text-muted-foreground mt-2">Build something great together</p>
@@ -66,6 +74,6 @@ export default function OrganizationCreate({}: OrganizationCreateProps) {
           </div>
         </form>
       </div>
-    </>
+    </AppLayout>
   )
 }

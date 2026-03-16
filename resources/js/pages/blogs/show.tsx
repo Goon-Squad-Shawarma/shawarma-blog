@@ -1,16 +1,33 @@
 import { Head, Link, useForm } from '@inertiajs/react'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { index as blogsIndex, show as blogsShow, edit as blogsEdit } from '@/routes/blogs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Heart, MessageCircle, Share2, Edit2, Trash2 } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Heart, MessageCircle, Edit2, Trash2 } from 'lucide-react'
 import CommentSection from '@/components/comments/comment-section'
 import LikeButton from '@/components/likes/like-button'
+import ShareButton from '@/components/share-button'
+import { RichTextViewer } from '@/components/blocks/editor-00/rich-text-viewer'
 
 interface Blog {
   id: number
   title: string
+  slug: string
   subtitle?: string
   content: string
   banner_url?: string
@@ -19,7 +36,7 @@ interface Blog {
   user: { id: number; name: string }
   organization?: { id: number; name: string }
   tags: Array<{ id: number; name: string }>
-  comments: any[]
+  comments: Array<{ id: number; content: string; created_at: string; user: { id: number; name: string }; likes: Array<{ id: number; user_id: number; type: 'thumbsup' | 'thumbsdown' }>; replies: Array<{ id: number; content: string; created_at: string; user: { id: number; name: string }; likes: Array<{ id: number; user_id: number; type: 'thumbsup' | 'thumbsdown' }>; replies: [] }> }>
   likes: any[]
 }
 
@@ -36,9 +53,7 @@ export default function BlogShow({ blog, canUpdate, canDelete, canComment, canLi
   const { delete: destroy } = useForm()
 
   const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this blog?')) {
-      destroy(`/blogs/${blog.id}`)
-    }
+    destroy(blogsShow({ slug: blog.slug }).url)
   }
 
   const publishedDate = new Date(blog.published_at).toLocaleDateString('en-US', {
@@ -47,22 +62,18 @@ export default function BlogShow({ blog, canUpdate, canDelete, canComment, canLi
     day: 'numeric',
   })
 
+  const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Blogs', href: blogsIndex().url },
+    { title: blog.title, href: blogsShow(blog).url },
+  ]
+
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={blog.title} />
 
-      <div className="max-w-3xl mx-auto space-y-8">
+      <div className="max-w-3xl mx-auto space-y-8 p-4">
         {/* Header */}
         <div className="space-y-4">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link href="/blogs" className="hover:text-foreground">
-              Blogs
-            </Link>
-            <span>/</span>
-            <span>{blog.title}</span>
-          </div>
-
           {/* Title and Meta */}
           <div className="space-y-4">
             <h1 className="text-4xl font-bold tracking-tight">{blog.title}</h1>
@@ -92,16 +103,34 @@ export default function BlogShow({ blog, canUpdate, canDelete, canComment, canLi
               {(canUpdate || canDelete) && (
                 <div className="flex gap-2">
                   {canUpdate && (
-                    <Link href={`/blogs/${blog.id}/edit`}>
+                    <Link href={blogsEdit({ slug: blog.slug }).url}>
                       <Button variant="ghost" size="sm">
                         <Edit2 className="h-4 w-4" />
                       </Button>
                     </Link>
                   )}
                   {canDelete && (
-                    <Button variant="ghost" size="sm" onClick={handleDelete}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete blog post?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. The post will be permanently deleted.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction variant="destructive" onClick={handleDelete}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   )}
                 </div>
               )}
@@ -133,9 +162,7 @@ export default function BlogShow({ blog, canUpdate, canDelete, canComment, canLi
 
         {/* Content */}
         <article className="prose prose-sm dark:prose-invert max-w-none">
-          <div className="whitespace-pre-wrap text-foreground leading-relaxed">
-            {blog.content}
-          </div>
+          <RichTextViewer content={blog.content} />
         </article>
 
         <Separator />
@@ -144,22 +171,24 @@ export default function BlogShow({ blog, canUpdate, canDelete, canComment, canLi
         <div className="flex items-center gap-6 py-4">
           {canLike && (
             <LikeButton
-              blogId={blog.id}
+              blogSlug={blog.slug}
               liked={userLiked}
               likesCount={blog.likes.length}
             />
           )}
           {canComment && (
-            <Button variant="ghost" size="sm" className="gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={() => document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               <MessageCircle className="h-4 w-4" />
               <span>{blog.comments.length}</span>
             </Button>
           )}
-          <Button variant="ghost" size="sm" className="gap-2">
-            <Share2 className="h-4 w-4" />
-          </Button>
+          <ShareButton url={blogsShow(blog).url} title={blog.title} />
         </div>
-
         <Separator />
 
         {/* Organization info */}
@@ -180,12 +209,12 @@ export default function BlogShow({ blog, canUpdate, canDelete, canComment, canLi
 
         {/* Comments Section */}
         {canComment && (
-          <div className="space-y-6">
+          <div id="comments" className="space-y-6">
             <Separator />
             <CommentSection blog={blog} />
           </div>
         )}
       </div>
-    </>
+    </AppLayout>
   )
 }

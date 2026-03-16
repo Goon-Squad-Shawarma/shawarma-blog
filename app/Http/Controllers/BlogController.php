@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Blog;
+use App\Models\Organization;
 use App\Models\Tag;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Inertia\Inertia;
 
 class BlogController extends Controller
@@ -16,14 +17,50 @@ class BlogController extends Controller
      */
     public function index(Request $request)
     {
-        $blogs = Blog::where('visibility', 'public')
-            ->with('user', 'organization', 'tags')
-            ->latest('published_at')
-            ->paginate(12);
+        $query = Blog::where('visibility', 'public')
+            ->with('user', 'organization', 'tags');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('content', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('tags')) {
+            foreach ((array) $request->tags as $tagSlug) {
+                $query->whereHas('tags', fn ($q) => $q->where('slug', $tagSlug));
+            }
+        }
+
+        if ($request->filled('author')) {
+            $query->where('user_id', $request->author);
+        }
+
+        if ($request->filled('organization')) {
+            $query->whereHas('organization', fn ($q) => $q->where('slug', $request->organization));
+        }
 
         return Inertia::render('blogs/index', [
-            'blogs' => $blogs,
+            'blogs' => $query->latest('published_at')->paginate(12)->withQueryString(),
+            'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
+            'organizations' => Organization::has('blogs')->orderBy('name')->get(['id', 'name', 'slug']),
+            'filters' => $request->only(['search', 'tags', 'author', 'organization']),
         ]);
+    }
+
+    /**
+     * Return paginated authors who have public blogs (JSON, for search suggestions).
+     */
+    public function authors(Request $request): JsonResponse
+    {
+        $authors = User::whereHas('blogs', fn ($q) => $q->where('visibility', 'public'))
+            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', "%{$request->search}%"))
+            ->orderBy('name')
+            ->paginate(15, ['id', 'name']);
+
+        return response()->json($authors);
     }
 
     /**
@@ -72,7 +109,7 @@ class BlogController extends Controller
     {
         $this->authorize('view', $blog);
 
-        $blog->load('user', 'organization', 'tags', 'comments.user', 'likes');
+        $blog->load('user', 'organization', 'tags', 'comments.user', 'comments.likes', 'comments.replies.user', 'comments.replies.likes', 'likes');
 
         return Inertia::render('blogs/show', [
             'blog' => $blog,

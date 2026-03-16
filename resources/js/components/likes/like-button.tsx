@@ -1,34 +1,55 @@
 import { Heart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useForm } from '@inertiajs/react'
 import { useState } from 'react'
+import { store as likesStore, destroy as likesDestroy } from '@/routes/likes'
 
 interface LikeButtonProps {
-  blogId: number
+  blogSlug: string
   liked: boolean
   likesCount: number
 }
 
-export default function LikeButton({ blogId, liked, likesCount }: LikeButtonProps) {
+function getCsrfToken(): string {
+  const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/)
+  return match ? decodeURIComponent(match[1]) : ''
+}
+
+export default function LikeButton({ blogSlug, liked, likesCount }: LikeButtonProps) {
   const [isLiked, setIsLiked] = useState(liked)
   const [count, setCount] = useState(likesCount)
-  const { post, delete: destroy, processing } = useForm()
+  const [processing, setProcessing] = useState(false)
 
-  const handleToggle = () => {
-    if (isLiked) {
-      destroy(`/blogs/${blogId}/like`, {
-        onSuccess: () => {
-          setIsLiked(false)
-          setCount(count - 1)
+  const handleToggle = async () => {
+    if (processing) return
+    setProcessing(true)
+
+    const wasLiked = isLiked
+    setIsLiked(!wasLiked)
+    setCount(wasLiked ? count - 1 : count + 1)
+
+    try {
+      const route = wasLiked
+        ? likesDestroy({ slug: blogSlug })
+        : likesStore({ slug: blogSlug })
+
+      const res = await fetch(route.url, {
+        method: route.method.toUpperCase(),
+        headers: {
+          'X-XSRF-TOKEN': getCsrfToken(),
+          Accept: 'application/json',
         },
-      } as any)
-    } else {
-      post(`/blogs/${blogId}/like`, {
-        onSuccess: () => {
-          setIsLiked(true)
-          setCount(count + 1)
-        },
-      } as any)
+        credentials: 'include',
+      })
+
+      if (!res.ok) {
+        setIsLiked(wasLiked)
+        setCount(wasLiked ? count : count - 1)
+      }
+    } catch {
+      setIsLiked(wasLiked)
+      setCount(wasLiked ? count : count - 1)
+    } finally {
+      setProcessing(false)
     }
   }
 

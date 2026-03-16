@@ -1,5 +1,4 @@
-import { Link } from '@inertiajs/react';
-import { FileText, Users, Building2 } from 'lucide-react';
+import { FileText, Users } from 'lucide-react';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
@@ -8,24 +7,15 @@ import {
     SidebarContent,
     SidebarFooter,
     SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import type { NavItem } from '@/types';
-import AppLogo from './app-logo';
-import { dashboard } from '@/routes';
+import { OrgSwitcher } from './org-switcher';
 
 const mainNavItems: NavItem[] = [
     {
         title: 'Blogs',
         href: '/blogs',
         icon: FileText,
-    },
-    {
-        title: 'Organizations',
-        href: '/organizations',
-        icon: Building2,
     },
     {
         title: 'Community',
@@ -40,15 +30,7 @@ export function AppSidebar() {
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link href="/blogs" prefetch>
-                                <AppLogo />
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+                <OrgSwitcher />
             </SidebarHeader>
 
             <SidebarContent>

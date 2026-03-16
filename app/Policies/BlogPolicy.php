@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Enums\OrganizationRole;
+use App\Enums\PostVisibility;
 use App\Models\Blog;
 use App\Models\User;
 
@@ -11,16 +12,16 @@ class BlogPolicy
     /**
      * Determine if the user can view the blog.
      */
-    public function view(User $user, Blog $blog): bool
+    public function view(?User $user, Blog $blog): bool
     {
         // If blog is public, anyone can view
-        if ($blog->visibility === 'public') {
+        if ($blog->visibility === PostVisibility::PUBLIC) {
             return true;
         }
 
         // If blog is private, only the author can view
-        if ($blog->visibility === 'private') {
-            return $blog->user_id === $user->id;
+        if ($blog->visibility === PostVisibility::PRIVATE) {
+            return $user && $blog->user_id === $user->id;
         }
 
         return false;

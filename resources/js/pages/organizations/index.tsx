@@ -1,4 +1,7 @@
 import { Head, Link, usePage } from '@inertiajs/react'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { index as organizationsIndex } from '@/routes/organizations'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,27 +17,18 @@ interface OrganizationIndexProps {
   organizations: Organization[]
 }
 
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Organizations', href: organizationsIndex().url },
+]
+
 export default function OrganizationIndex({ organizations }: OrganizationIndexProps) {
   const { auth } = usePage().props
 
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title="Organizations" />
 
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Organizations</h1>
-            <p className="text-muted-foreground mt-2">Collaborate with your team</p>
-          </div>
-          {auth?.user && (
-            <Link href="/organizations/create">
-              <Button>Create Organization</Button>
-            </Link>
-          )}
-        </div>
-
+      <div className="p-4 space-y-8">
         {/* Organizations Grid */}
         {organizations.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -74,6 +68,6 @@ export default function OrganizationIndex({ organizations }: OrganizationIndexPr
           </div>
         )}
       </div>
-    </>
+    </AppLayout>
   )
 }

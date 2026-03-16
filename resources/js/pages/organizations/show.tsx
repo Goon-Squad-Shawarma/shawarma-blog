@@ -1,4 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { index as organizationsIndex, show as organizationsShow, edit as organizationsEdit } from '@/routes/organizations'
+import { show as blogsShow } from '@/routes/blogs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -20,6 +24,7 @@ interface Member {
 
 interface Blog {
   id: number
+  slug: string
   title: string
   subtitle: string
   published_at: string
@@ -50,11 +55,16 @@ export default function OrganizationShow({ organization, canEdit }: Organization
     }
   }
 
+  const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Organizations', href: organizationsIndex().url },
+    { title: organization.name, href: organizationsShow(organization).url },
+  ]
+
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={organization.name} />
 
-      <div className="space-y-8">
+      <div className="p-4 space-y-8">
         {/* Organization Header */}
         <Card>
           <CardHeader>
@@ -148,7 +158,7 @@ export default function OrganizationShow({ organization, canEdit }: Organization
                 <Card key={blog.id}>
                   <CardHeader>
                     <CardTitle className="line-clamp-2">
-                      <Link href={`/blogs/${blog.id}`}>{blog.title}</Link>
+                      <Link href={blogsShow(blog).url}>{blog.title}</Link>
                     </CardTitle>
                     <CardDescription className="line-clamp-2">{blog.subtitle}</CardDescription>
                   </CardHeader>
@@ -158,7 +168,7 @@ export default function OrganizationShow({ organization, canEdit }: Organization
                     </p>
                   </CardContent>
                   <CardFooter>
-                    <Link href={`/blogs/${blog.id}`} className="w-full">
+                    <Link href={blogsShow(blog).url} className="w-full">
                       <Button variant="ghost" size="sm" className="w-full">
                         Read More →
                       </Button>
@@ -172,6 +182,6 @@ export default function OrganizationShow({ organization, canEdit }: Organization
           )}
         </div>
       </div>
-    </>
+    </AppLayout>
   )
 }

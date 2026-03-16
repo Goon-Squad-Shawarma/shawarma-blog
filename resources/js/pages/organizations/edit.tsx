@@ -1,5 +1,8 @@
 import { Head, useForm } from '@inertiajs/react'
 import { FormEvent } from 'react'
+import AppLayout from '@/layouts/app-layout'
+import type { BreadcrumbItem } from '@/types'
+import { index as organizationsIndex, show as organizationsShow, edit as organizationsEdit } from '@/routes/organizations'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -27,11 +30,17 @@ export default function OrganizationEdit({ organization }: OrganizationEditProps
     patch(`/organizations/${organization.id}`)
   }
 
+  const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Organizations', href: organizationsIndex().url },
+    { title: organization.name, href: organizationsShow(organization).url },
+    { title: 'Edit', href: organizationsEdit(organization).url },
+  ]
+
   return (
-    <>
+    <AppLayout breadcrumbs={breadcrumbs}>
       <Head title={`Edit ${organization.name}`} />
 
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className="max-w-2xl mx-auto space-y-8 p-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Edit Organization</h1>
           <p className="text-muted-foreground mt-2">Update your organization</p>
@@ -74,6 +83,6 @@ export default function OrganizationEdit({ organization }: OrganizationEditProps
           </div>
         </form>
       </div>
-    </>
+    </AppLayout>
   )
 }

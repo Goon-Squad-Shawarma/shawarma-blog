@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\LikeType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Like extends Model
 {
@@ -12,16 +14,19 @@ class Like extends Model
 
     protected $fillable = [
         'user_id',
-        'blog_id',
+        'likeable_id',
+        'likeable_type',
+        'type',
     ];
 
     protected $casts = [
+        'type' => LikeType::class,
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
 
     /**
-     * The user who liked the post.
+     * The user who created the like.
      */
     public function user(): BelongsTo
     {
@@ -29,10 +34,10 @@ class Like extends Model
     }
 
     /**
-     * The blog post that was liked.
+     * The likeable model (Blog or Comment).
      */
-    public function blog(): BelongsTo
+    public function likeable(): MorphTo
     {
-        return $this->belongsTo(Blog::class);
+        return $this->morphTo();
     }
 }

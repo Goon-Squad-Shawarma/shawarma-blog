@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
+use App\Enums\LikeType;
 use App\Models\Blog;
+use App\Models\Comment;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +22,9 @@ class LikeFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'blog_id' => Blog::factory(),
+            'likeable_id' => Blog::factory(),
+            'likeable_type' => Blog::class,
+            'type' => LikeType::Like->value,
         ];
     }
 
@@ -40,7 +44,33 @@ class LikeFactory extends Factory
     public function forBlog(Blog $blog): static
     {
         return $this->state(fn (array $attributes) => [
-            'blog_id' => $blog->id,
+            'likeable_id' => $blog->id,
+            'likeable_type' => Blog::class,
+            'type' => LikeType::Like->value,
+        ]);
+    }
+
+    /**
+     * Indicate that the like is a thumbs up for a comment.
+     */
+    public function thumbsUpForComment(Comment $comment): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'likeable_id' => $comment->id,
+            'likeable_type' => Comment::class,
+            'type' => LikeType::ThumbsUp->value,
+        ]);
+    }
+
+    /**
+     * Indicate that the like is a thumbs down for a comment.
+     */
+    public function thumbsDownForComment(Comment $comment): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'likeable_id' => $comment->id,
+            'likeable_type' => Comment::class,
+            'type' => LikeType::ThumbsDown->value,
         ]);
     }
 }

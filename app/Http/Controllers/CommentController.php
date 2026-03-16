@@ -5,8 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Blog;
 use App\Models\Comment;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia;
 
 class CommentController extends Controller
 {
@@ -30,7 +28,7 @@ class CommentController extends Controller
 
         $comment->load('user', 'replies');
 
-        return response()->json($comment, 201);
+        return redirect()->back();
     }
 
     /**
@@ -45,9 +43,8 @@ class CommentController extends Controller
         ]);
 
         $comment->update($validated);
-        $comment->load('user', 'replies');
 
-        return response()->json($comment);
+        return redirect()->back();
     }
 
     /**
@@ -59,7 +56,7 @@ class CommentController extends Controller
 
         $comment->delete();
 
-        return response()->json(['message' => 'Comment deleted successfully.']);
+        return redirect()->back();
     }
 
     /**
