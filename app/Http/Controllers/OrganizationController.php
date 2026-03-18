@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Organization;
 use App\Enums\OrganizationRole;
+use App\Models\Follow;
+use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class OrganizationController extends Controller
@@ -60,18 +61,27 @@ class OrganizationController extends Controller
      */
     public function show(Organization $organization)
     {
-        $organization->load('owner', 'users', 'blogs');
+        $organization->load('owner', 'users', 'blogs.tags');
 
         $isMember = auth()->check() ? $organization->users()->where('user_id', auth()->id())->exists() : false;
         $userRole = auth()->check() ? $organization->users()->where('user_id', auth()->id())->first()?->pivot?->role : null;
+        $isFollowing = auth()->check() ? auth()->user()->followingOrganizations()->where('following_organization_id', $organization->id)->exists() : false;
+        $canAddMembers = auth()->check() && auth()->user()->can('addMember', $organization);
+
+        $pendingInvitations = $canAddMembers
+            ? $organization->invitations()->pending()->latest()->get(['id', 'email', 'role', 'created_at', 'expires_at'])
+            : collect();
 
         return Inertia::render('organizations/show', [
             'organization' => $organization,
             'isMember' => $isMember,
             'userRole' => $userRole,
+            'isFollowing' => $isFollowing,
+            'followersCount' => $organization->followers()->count(),
             'canUpdate' => auth()->check() && auth()->user()->can('update', $organization),
             'canDelete' => auth()->check() && auth()->user()->can('delete', $organization),
-            'canAddMembers' => auth()->check() && auth()->user()->can('addMember', $organization),
+            'canAddMembers' => $canAddMembers,
+            'pendingInvitations' => $pendingInvitations,
         ]);
     }
 
@@ -139,17 +149,38 @@ class OrganizationController extends Controller
     /**
      * Remove a member from the organization.
      */
-    public function removeMember(Request $request, Organization $organization)
+    public function removeMember(Organization $organization, User $user)
     {
         $this->authorize('removeMember', $organization);
 
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-        ]);
-
-        $organization->users()->detach($validated['user_id']);
+        $organization->users()->detach($user->id);
 
         return redirect()->route('organizations.show', $organization)->with('success', 'Member removed successfully.');
+    }
+
+    /**
+     * Follow an organization.
+     */
+    public function follow(Organization $organization)
+    {
+        Follow::firstOrCreate([
+            'user_id' => auth()->id(),
+            'following_organization_id' => $organization->id,
+        ]);
+
+        return back()->with('success', 'Now following organization.');
+    }
+
+    /**
+     * Unfollow an organization.
+     */
+    public function unfollow(Organization $organization)
+    {
+        Follow::where('user_id', auth()->id())
+            ->where('following_organization_id', $organization->id)
+            ->delete();
+
+        return back()->with('success', 'Unfollowed organization.');
     }
 
     /**

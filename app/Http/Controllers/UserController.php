@@ -2,14 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Follow;
+use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class UserController extends Controller
 {
+    /**
+     * Search users by name or email (for member management).
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $users = User::when(
+            $request->filled('q'),
+            fn ($query) => $query->where('name', 'like', "%{$request->q}%")
+                ->orWhere('email', 'like', "%{$request->q}%")
+        )
+            ->orderBy('name')
+            ->limit(15)
+            ->get(['id', 'name', 'email']);
+
+        return response()->json($users);
+    }
+
     /**
      * Display the user's profile.
      */

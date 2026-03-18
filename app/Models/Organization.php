@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
+use OffloadProject\InviteOnly\Traits\HasInvitations;
 
 class Organization extends Model
 {
-    use HasFactory;
+    use HasFactory, HasInvitations;
 
     protected $fillable = [
         'name',
@@ -41,13 +42,13 @@ class Organization extends Model
     public function followers(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'follows', 'following_organization_id', 'user_id')
-        ->withTimestamps();
+            ->withTimestamps();
     }
 
     protected static function booted()
     {
-        static::creating (function ($organization) {
-            if (!$organization->slug) {
+        static::creating(function ($organization) {
+            if (! $organization->slug) {
                 $organization->slug = Str::slug($organization->name);
             }
         });

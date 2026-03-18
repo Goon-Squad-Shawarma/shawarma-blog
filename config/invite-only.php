@@ -112,7 +112,7 @@ return [
     |
     */
     'redirect' => [
-        'accepted' => '/',
+        'accepted' => '/organizations',
         'declined' => '/',
         'expired' => '/',
         'error' => '/',

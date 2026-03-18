@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\OrganizationController;
 use App\Http\Controllers\TagController;
@@ -21,6 +22,9 @@ Route::redirect('dashboard', '/blogs')->name('dashboard');
 // Public blog routes
 Route::get('blogs', [BlogController::class, 'index'])->name('blogs.index');
 Route::get('blogs/authors', [BlogController::class, 'authors'])->name('blogs.authors');
+
+// Public user routes (before auth block and before wildcard)
+Route::get('users/search', [UserController::class, 'search'])->name('users.search')->middleware('auth');
 
 // Tags
 Route::get('tags/search', [TagController::class, 'search'])->name('tags.search');
@@ -60,9 +64,18 @@ Route::middleware('auth')->group(function () {
     Route::delete('organizations/{organization}/members/{user}', [OrganizationController::class, 'removeMember'])->name('organizations.remove-member');
     Route::patch('organizations/{organization}/members/{user}/role', [OrganizationController::class, 'updateMemberRole'])->name('organizations.update-member-role');
 
+    // Organization invitations
+    Route::post('organizations/{organization}/invitations', [InvitationController::class, 'store'])->name('organizations.invite');
+    Route::delete('organizations/{organization}/invitations/{invitation}', [InvitationController::class, 'cancel'])->name('organizations.invitation-cancel');
+    Route::post('organizations/{organization}/invitations/{invitation}/resend', [InvitationController::class, 'resend'])->name('organizations.invitation-resend');
+
     // User follow/unfollow
     Route::post('users/{user}/follow', [UserController::class, 'follow'])->name('users.follow');
     Route::delete('users/{user}/follow', [UserController::class, 'unfollow'])->name('users.unfollow');
+
+    // Organization follow/unfollow
+    Route::post('organizations/{organization}/follow', [OrganizationController::class, 'follow'])->name('organizations.follow');
+    Route::delete('organizations/{organization}/follow', [OrganizationController::class, 'unfollow'])->name('organizations.unfollow');
 });
 
 // Public blog wildcard (after static routes to avoid swallowing 'create')

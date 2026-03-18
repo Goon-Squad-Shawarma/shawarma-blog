@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrganizationRole;
 use App\Models\Blog;
 use App\Models\Organization;
 use App\Models\Tag;
@@ -70,8 +71,13 @@ class BlogController extends Controller
     {
         $this->authorize('create', Blog::class);
 
+        $userOrganizations = auth()->user()->organizations()
+            ->wherePivotIn('role', [OrganizationRole::ADMIN->value, OrganizationRole::EDITOR->value, OrganizationRole::AUTHOR->value])
+            ->get(['organizations.id', 'organizations.name', 'organizations.slug']);
+
         return Inertia::render('blogs/create', [
             'tags' => Tag::all(),
+            'organizations' => $userOrganizations,
         ]);
     }
 
@@ -89,9 +95,19 @@ class BlogController extends Controller
             'banner_url' => 'nullable|url',
             'visibility' => 'required|in:public,private',
             'published_at' => 'nullable|date',
+            'organization_id' => 'nullable|exists:organizations,id',
             'tags' => 'array',
             'tags.*' => 'exists:tags,id',
         ]);
+
+        if (isset($validated['organization_id'])) {
+            $isMember = auth()->user()->organizations()
+                ->where('organization_id', $validated['organization_id'])
+                ->wherePivotIn('role', [OrganizationRole::ADMIN->value, OrganizationRole::EDITOR->value, OrganizationRole::AUTHOR->value])
+                ->exists();
+
+            abort_if(! $isMember, 403, 'You do not have permission to post on behalf of this organization.');
+        }
 
         $blog = auth()->user()->blogs()->create($validated);
 
@@ -130,10 +146,15 @@ class BlogController extends Controller
 
         $blog->load('tags');
 
+        $userOrganizations = auth()->user()->organizations()
+            ->wherePivotIn('role', [OrganizationRole::ADMIN->value, OrganizationRole::EDITOR->value, OrganizationRole::AUTHOR->value])
+            ->get(['organizations.id', 'organizations.name', 'organizations.slug']);
+
         return Inertia::render('blogs/edit', [
             'blog' => $blog,
             'tags' => Tag::all(),
             'selectedTags' => $blog->tags->pluck('id'),
+            'organizations' => $userOrganizations,
         ]);
     }
 
@@ -151,6 +172,7 @@ class BlogController extends Controller
             'banner_url' => 'nullable|url',
             'visibility' => 'required|in:public,private',
             'published_at' => 'nullable|date',
+            'organization_id' => 'nullable|exists:organizations,id',
             'tags' => 'array',
             'tags.*' => 'exists:tags,id',
         ]);
