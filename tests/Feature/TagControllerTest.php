@@ -5,13 +5,15 @@ use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 test('anyone can search tags', function () {
+    $user = User::factory()->create();
+
     Tag::factory()->createMany([
         ['name' => 'Laravel', 'slug' => 'laravel'],
         ['name' => 'React', 'slug' => 'react'],
         ['name' => 'Vue', 'slug' => 'vue'],
     ]);
 
-    $response = $this->getJson(route('tags.search', ['q' => 'la']));
+    $response = $this->actingAs($user)->getJson(route('tags.search', ['q' => 'la']));
 
     $response->assertOk()
         ->assertJsonCount(1)
@@ -19,9 +21,11 @@ test('anyone can search tags', function () {
 });
 
 test('search with no query returns all tags', function () {
+    $user = User::factory()->create();
+
     Tag::factory()->count(5)->create();
 
-    $response = $this->getJson(route('tags.search'));
+    $response = $this->actingAs($user)->getJson(route('tags.search'));
 
     $response->assertOk()
         ->assertJsonCount(5);

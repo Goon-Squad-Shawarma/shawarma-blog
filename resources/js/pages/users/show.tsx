@@ -10,8 +10,11 @@ import { Badge } from '@/components/ui/badge'
 
 interface User {
   id: number
-  name: string
+  first_name: string
+  last_name: string
   email: string
+  avatar_url?: string | null
+  background_url?: string | null
   created_at: string
 }
 
@@ -45,12 +48,12 @@ export default function UserShow({ user, isFollowing }: UserShowProps) {
   const isCurrentUser = auth?.user?.id === user.id
 
   const breadcrumbs: BreadcrumbItem[] = [
-    { title: user.name, href: usersShow(user).url },
+    { title: `${user.first_name} ${user.last_name}`, href: usersShow(user).url },
   ]
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title={user.name} />
+      <Head title={`${user.first_name} ${user.last_name}`} />
 
       <div className="p-4 space-y-8">
         {/* User Header */}
@@ -59,10 +62,11 @@ export default function UserShow({ user, isFollowing }: UserShowProps) {
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={user.avatar_url ?? undefined} alt={`${user.first_name} ${user.last_name}`} />
+                  <AvatarFallback>{user.first_name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <CardTitle className="text-2xl">{user.name}</CardTitle>
+                  <CardTitle className="text-2xl">{`${user.first_name} ${user.last_name}`}</CardTitle>
                   <CardDescription>{user.email}</CardDescription>
                   <p className="text-sm text-muted-foreground mt-2">
                     Joined {new Date(user.created_at).toLocaleDateString()}

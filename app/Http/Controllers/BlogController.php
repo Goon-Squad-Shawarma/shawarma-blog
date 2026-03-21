@@ -9,6 +9,8 @@ use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class BlogController extends Controller
@@ -57,9 +59,12 @@ class BlogController extends Controller
     public function authors(Request $request): JsonResponse
     {
         $authors = User::whereHas('blogs', fn ($q) => $q->where('visibility', 'public'))
-            ->when($request->filled('search'), fn ($q) => $q->where('name', 'like', "%{$request->search}%"))
-            ->orderBy('name')
-            ->paginate(15, ['id', 'name']);
+            ->when($request->filled('search'), fn ($q) => $q->where(function ($q) use ($request) {
+                $q->where('first_name', 'like', "%{$request->search}%")
+                    ->orWhere('last_name', 'like', "%{$request->search}%");
+            }))
+            ->orderBy('first_name')
+            ->paginate(15, ['id', 'first_name', 'last_name', 'avatar_url']);
 
         return response()->json($authors);
     }
@@ -92,7 +97,7 @@ class BlogController extends Controller
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
             'content' => 'required|string',
-            'banner_url' => 'nullable|url',
+            'banner' => 'nullable|image|max:5120',
             'visibility' => 'required|in:public,private',
             'published_at' => 'nullable|date',
             'organization_id' => 'nullable|exists:organizations,id',
@@ -109,7 +114,16 @@ class BlogController extends Controller
             abort_if(! $isMember, 403, 'You do not have permission to post on behalf of this organization.');
         }
 
-        $blog = auth()->user()->blogs()->create($validated);
+        $bannerUrl = null;
+        if ($request->hasFile('banner')) {
+            $path = $request->file('banner')->store('banners', ['disk' => 's3']);
+            $bannerUrl = Storage::disk('s3')->url($path);
+        }
+
+        $blog = auth()->user()->blogs()->create(array_merge(
+            Arr::except($validated, ['banner', 'tags']),
+            ['banner_url' => $bannerUrl]
+        ));
 
         if ($request->has('tags')) {
             $blog->tags()->sync($request->input('tags'));
@@ -169,7 +183,7 @@ class BlogController extends Controller
             'title' => 'required|string|max:255',
             'subtitle' => 'nullable|string|max:255',
             'content' => 'required|string',
-            'banner_url' => 'nullable|url',
+            'banner' => 'nullable|image|max:5120',
             'visibility' => 'required|in:public,private',
             'published_at' => 'nullable|date',
             'organization_id' => 'nullable|exists:organizations,id',
@@ -177,7 +191,16 @@ class BlogController extends Controller
             'tags.*' => 'exists:tags,id',
         ]);
 
-        $blog->update($validated);
+        $bannerUrl = $blog->banner_url;
+        if ($request->hasFile('banner')) {
+            $path = $request->file('banner')->store('banners', ['disk' => 's3']);
+            $bannerUrl = Storage::disk('s3')->url($path);
+        }
+
+        $blog->update(array_merge(
+            Arr::except($validated, ['banner', 'tags']),
+            ['banner_url' => $bannerUrl]
+        ));
 
         if ($request->has('tags')) {
             $blog->tags()->sync($request->input('tags'));

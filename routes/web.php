@@ -19,28 +19,23 @@ Route::get('/', function () {
 
 Route::redirect('dashboard', '/blogs')->name('dashboard');
 
-// Public blog routes
-Route::get('blogs', [BlogController::class, 'index'])->name('blogs.index');
-Route::get('blogs/authors', [BlogController::class, 'authors'])->name('blogs.authors');
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Blog listing & authors search
+    Route::get('blogs', [BlogController::class, 'index'])->name('blogs.index');
+    Route::get('blogs/authors', [BlogController::class, 'authors'])->name('blogs.authors');
 
-// Public user routes (before auth block and before wildcard)
-Route::get('users/search', [UserController::class, 'search'])->name('users.search')->middleware('auth');
-
-// Tags
-Route::get('tags/search', [TagController::class, 'search'])->name('tags.search');
-Route::post('tags', [TagController::class, 'store'])->name('tags.store')->middleware('auth');
-
-// Authenticated blog routes
-Route::middleware('auth')->group(function () {
-    // Blog CRUD
+    // Static blog routes (before wildcard)
     Route::get('blogs/create', [BlogController::class, 'create'])->name('blogs.create');
     Route::post('blogs', [BlogController::class, 'store'])->name('blogs.store');
+    Route::get('my-blogs', [BlogController::class, 'userBlogs'])->name('blogs.user-blogs');
+
+    // Blog wildcard (after statics)
+    Route::get('blogs/{blog}', [BlogController::class, 'show'])->name('blogs.show');
     Route::get('blogs/{blog}/edit', [BlogController::class, 'edit'])->name('blogs.edit');
     Route::patch('blogs/{blog}', [BlogController::class, 'update'])->name('blogs.update');
     Route::delete('blogs/{blog}', [BlogController::class, 'destroy'])->name('blogs.destroy');
     Route::patch('blogs/{blog}/restore', [BlogController::class, 'restore'])->name('blogs.restore');
     Route::patch('blogs/{blog}/publish', [BlogController::class, 'publish'])->name('blogs.publish');
-    Route::get('my-blogs', [BlogController::class, 'userBlogs'])->name('blogs.user-blogs');
 
     // Comments
     Route::post('blogs/{blog}/comments', [CommentController::class, 'store'])->name('comments.store');
@@ -54,9 +49,23 @@ Route::middleware('auth')->group(function () {
     Route::post('comments/{comment}/like', [LikeController::class, 'storeForComment'])->name('comment-likes.store');
     Route::delete('comments/{comment}/like', [LikeController::class, 'destroyForComment'])->name('comment-likes.destroy');
 
+    // Tags
+    Route::get('tags/search', [TagController::class, 'search'])->name('tags.search');
+    Route::post('tags', [TagController::class, 'store'])->name('tags.store');
+
+    // Users
+    Route::get('users/search', [UserController::class, 'search'])->name('users.search');
+    Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
+    Route::get('users/{user}/followers', [UserController::class, 'followers'])->name('users.followers');
+    Route::get('users/{user}/following', [UserController::class, 'following'])->name('users.following');
+    Route::post('users/{user}/follow', [UserController::class, 'follow'])->name('users.follow');
+    Route::delete('users/{user}/follow', [UserController::class, 'unfollow'])->name('users.unfollow');
+
     // Organizations
+    Route::get('organizations', [OrganizationController::class, 'index'])->name('organizations.index');
     Route::get('organizations/create', [OrganizationController::class, 'create'])->name('organizations.create');
     Route::post('organizations', [OrganizationController::class, 'store'])->name('organizations.store');
+    Route::get('organizations/{organization}', [OrganizationController::class, 'show'])->name('organizations.show');
     Route::get('organizations/{organization}/edit', [OrganizationController::class, 'edit'])->name('organizations.edit');
     Route::patch('organizations/{organization}', [OrganizationController::class, 'update'])->name('organizations.update');
     Route::delete('organizations/{organization}', [OrganizationController::class, 'destroy'])->name('organizations.destroy');
@@ -69,25 +78,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('organizations/{organization}/invitations/{invitation}', [InvitationController::class, 'cancel'])->name('organizations.invitation-cancel');
     Route::post('organizations/{organization}/invitations/{invitation}/resend', [InvitationController::class, 'resend'])->name('organizations.invitation-resend');
 
-    // User follow/unfollow
-    Route::post('users/{user}/follow', [UserController::class, 'follow'])->name('users.follow');
-    Route::delete('users/{user}/follow', [UserController::class, 'unfollow'])->name('users.unfollow');
-
     // Organization follow/unfollow
     Route::post('organizations/{organization}/follow', [OrganizationController::class, 'follow'])->name('organizations.follow');
     Route::delete('organizations/{organization}/follow', [OrganizationController::class, 'unfollow'])->name('organizations.unfollow');
 });
-
-// Public blog wildcard (after static routes to avoid swallowing 'create')
-Route::get('blogs/{blog}', [BlogController::class, 'show'])->name('blogs.show');
-
-// Public user routes
-Route::get('users/{user}', [UserController::class, 'show'])->name('users.show');
-Route::get('users/{user}/followers', [UserController::class, 'followers'])->name('users.followers');
-Route::get('users/{user}/following', [UserController::class, 'following'])->name('users.following');
-
-// Public organization routes
-Route::get('organizations', [OrganizationController::class, 'index'])->name('organizations.index');
-Route::get('organizations/{organization}', [OrganizationController::class, 'show'])->name('organizations.show');
 
 require __DIR__.'/settings.php';

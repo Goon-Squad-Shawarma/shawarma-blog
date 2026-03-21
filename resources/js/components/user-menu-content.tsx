@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, Settings, User as UserIcon } from 'lucide-react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -14,9 +14,10 @@ import { edit } from '@/routes/profile';
 
 type Props = {
     user: User;
+    onProfileClick?: () => void;
 };
 
-export function UserMenuContent({ user }: Props) {
+export function UserMenuContent({ user, onProfileClick }: Props) {
     const cleanup = useMobileNavigation();
 
     const handleLogout = () => {
@@ -33,6 +34,10 @@ export function UserMenuContent({ user }: Props) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+                <DropdownMenuItem onSelect={onProfileClick}>
+                    <UserIcon className="mr-2 h-4 w-4" />
+                    Profile
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                     <Link
                         className="block w-full cursor-pointer"

@@ -33,10 +33,10 @@ interface Blog {
   banner_url?: string
   published_at: string
   reading_time: number
-  user: { id: number; name: string }
+  user: { id: number; first_name: string; last_name: string; avatar_url?: string | null }
   organization?: { id: number; name: string }
   tags: Array<{ id: number; name: string }>
-  comments: Array<{ id: number; content: string; created_at: string; user: { id: number; name: string }; likes: Array<{ id: number; user_id: number; type: 'thumbsup' | 'thumbsdown' }>; replies: Array<{ id: number; content: string; created_at: string; user: { id: number; name: string }; likes: Array<{ id: number; user_id: number; type: 'thumbsup' | 'thumbsdown' }>; replies: [] }> }>
+  comments: Array<{ id: number; content: string; created_at: string; user: { id: number; first_name: string; last_name: string; avatar_url?: string | null }; likes: Array<{ id: number; user_id: number; type: 'thumbsup' | 'thumbsdown' }>; replies: Array<{ id: number; content: string; created_at: string; user: { id: number; first_name: string; last_name: string; avatar_url?: string | null }; likes: Array<{ id: number; user_id: number; type: 'thumbsup' | 'thumbsdown' }>; replies: [] }>}>
   likes: any[]
 }
 
@@ -85,12 +85,13 @@ export default function BlogShow({ blog, canUpdate, canDelete, canComment, canLi
             <div className="flex items-center justify-between pt-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-12 w-12">
-                  <AvatarFallback>{blog.user.name.charAt(0)}</AvatarFallback>
+                  <AvatarImage src={blog.user.avatar_url ?? undefined} alt={`${blog.user.first_name} ${blog.user.last_name}`} />
+                  <AvatarFallback>{blog.user.first_name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
                   <p className="font-medium">
                     <Link href={`/users/${blog.user.id}`} className="hover:underline">
-                      {blog.user.name}
+                      {`${blog.user.first_name} ${blog.user.last_name}`}
                     </Link>
                   </p>
                   <p className="text-sm text-muted-foreground">

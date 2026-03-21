@@ -56,7 +56,7 @@ export default function NotificationMenu() {
   return (
     <Inbox
       applicationIdentifier={import.meta.env.VITE_NOVU_APPLICATION_IDENTIFIER ?? ""}
-      subscriberId={String(auth.user.id)}
+      subscriberId={auth.user.uuid as string}
       appearance={isDark ? { baseTheme: [themes.dark] } : undefined}
     >
       <NotificationBell />

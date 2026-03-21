@@ -3,20 +3,23 @@ import AppLayout from '@/layouts/app-layout'
 import type { BreadcrumbItem } from '@/types'
 import { show as usersShow, following as usersFollowing } from '@/routes/users'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 interface User {
   id: number
-  name: string
+  first_name: string
+  last_name: string
   email: string
 }
 
 interface FollowableUser {
   id: number
-  name: string
+  first_name: string
+  last_name: string
   email: string
+  avatar_url?: string | null
 }
 
 interface FollowableOrganization {
@@ -42,19 +45,19 @@ export default function Following({ user, following }: FollowingPageProps) {
   const organizations = following.filter((item) => item.following_organization)
 
   const breadcrumbs: BreadcrumbItem[] = [
-    { title: user.name, href: usersShow(user).url },
+    { title: `${user.first_name} ${user.last_name}`, href: usersShow(user).url },
     { title: 'Following', href: usersFollowing(user).url },
   ]
 
   return (
     <AppLayout breadcrumbs={breadcrumbs}>
-      <Head title={`${user.name}'s Following`} />
+      <Head title={`${user.first_name} ${user.last_name}'s Following`} />
 
       <div className="p-4 space-y-8">
         {/* Header */}
         <div>
           <Link href={`/users/${user.id}`} className="text-blue-600 hover:underline">
-            ← Back to {user.name}
+            ← Back to {`${user.first_name} ${user.last_name}`}
           </Link>
           <h1 className="text-3xl font-bold tracking-tight mt-4">Following</h1>
           <p className="text-muted-foreground mt-2">{following.length} follow{following.length !== 1 ? 's' : ''}</p>
@@ -72,9 +75,10 @@ export default function Following({ user, following }: FollowingPageProps) {
                     <CardHeader>
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          <AvatarFallback>{followUser.name.charAt(0)}</AvatarFallback>
+                          <AvatarImage src={followUser.avatar_url ?? undefined} alt={`${followUser.first_name} ${followUser.last_name}`} />
+                          <AvatarFallback>{followUser.first_name.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <CardTitle className="text-lg">{followUser.name}</CardTitle>
+                        <CardTitle className="text-lg">{`${followUser.first_name} ${followUser.last_name}`}</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>

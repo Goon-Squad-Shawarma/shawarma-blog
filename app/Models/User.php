@@ -5,17 +5,23 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Enums\OrganizationRole;
+use App\Jobs\SendVerificationEmailJob;
+use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use OffloadProject\InviteOnly\Traits\CanBeInvited;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use CanBeInvited, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
@@ -24,9 +30,16 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'uuid',
+        'first_name',
+        'last_name',
+        'username',
         'email',
         'password',
+        'avatar_url',
+        'background_url',
+        'website',
+        'bio',
     ];
 
     /**
@@ -53,6 +66,49 @@ class User extends Authenticatable
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    protected function avatarUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $this->resolveS3Url($value),
+        );
+    }
+
+    protected function backgroundUrl(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $this->resolveS3Url($value),
+        );
+    }
+
+    private function resolveS3Url(?string $value): ?string
+    {
+        if (! $value) {
+            return null;
+        }
+
+        // Support legacy full URLs stored before path-only approach
+        if (str_starts_with($value, 'http')) {
+            $urlPath = parse_url($value, PHP_URL_PATH);
+            $value = ltrim(preg_replace('#^/[^/]+/#', '', $urlPath), '/');
+        }
+
+        return Storage::disk('s3')->temporaryUrl($value, now()->addWeek());
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        SendVerificationEmailJob::dispatch($this);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (empty($user->uuid)) {
+                $user->uuid = (string) Str::uuid();
+            }
+        });
     }
 
     public function blogs(): HasMany

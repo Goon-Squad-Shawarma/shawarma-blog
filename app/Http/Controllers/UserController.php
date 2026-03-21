@@ -17,12 +17,15 @@ class UserController extends Controller
     {
         $users = User::when(
             $request->filled('q'),
-            fn ($query) => $query->where('name', 'like', "%{$request->q}%")
-                ->orWhere('email', 'like', "%{$request->q}%")
+            fn ($query) => $query->where(function ($query) use ($request) {
+                $query->where('first_name', 'like', "%{$request->q}%")
+                    ->orWhere('last_name', 'like', "%{$request->q}%")
+                    ->orWhere('email', 'like', "%{$request->q}%");
+            })
         )
-            ->orderBy('name')
+            ->orderBy('first_name')
             ->limit(15)
-            ->get(['id', 'name', 'email']);
+            ->get(['id', 'first_name', 'last_name', 'email', 'avatar_url']);
 
         return response()->json($users);
     }

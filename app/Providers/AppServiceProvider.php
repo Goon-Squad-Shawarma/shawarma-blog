@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Enums\OrganizationRole;
 use App\Models\Organization;
+use App\Services\NovuService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(NovuService::class, fn () => new NovuService(
+            secretKey: config('novu.secret_key'),
+        ));
     }
 
     /**

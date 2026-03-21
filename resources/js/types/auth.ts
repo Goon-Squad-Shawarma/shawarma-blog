@@ -1,8 +1,14 @@
 export type User = {
     id: number;
-    name: string;
+    uuid: string;
+    first_name: string;
+    last_name: string;
+    username: string | null;
     email: string;
-    avatar?: string;
+    avatar_url?: string | null;
+    background_url?: string | null;
+    website?: string | null;
+    bio?: string | null;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
     created_at: string;

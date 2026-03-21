@@ -30,7 +30,21 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $validated = $request->validated();
+
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars', ['disk' => 's3']);
+            $validated['avatar_url'] = $path;
+        }
+
+        if ($request->hasFile('background')) {
+            $path = $request->file('background')->store('backgrounds', ['disk' => 's3']);
+            $validated['background_url'] = $path;
+        }
+
+        unset($validated['avatar'], $validated['background']);
+
+        $request->user()->fill($validated);
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;

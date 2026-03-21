@@ -18,7 +18,7 @@ import {
 import { show as blogsShow } from '@/routes/blogs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
@@ -39,14 +39,17 @@ import {
 
 interface User {
     id: number
-    name: string
+    first_name: string
+    last_name: string
     email: string
 }
 
 interface Member {
     id: number
-    name: string
+    first_name: string
+    last_name: string
     email: string
+    avatar_url?: string | null
     pivot: {
         role: 'admin' | 'editor' | 'author'
     }
@@ -272,7 +275,7 @@ export default function OrganizationShow({
                         </CardHeader>
                         <CardContent>
                             <Link href={`/users/${organization.owner.id}`} className="font-semibold hover:underline">
-                                {organization.owner.name}
+                                {organization.owner.first_name} {organization.owner.last_name}
                             </Link>
                         </CardContent>
                     </Card>
@@ -322,10 +325,10 @@ export default function OrganizationShow({
                                         <div key={member.id} className="flex items-center justify-between p-3 border rounded-lg">
                                             <div className="flex items-center gap-3">
                                                 <Avatar>
-                                                    <AvatarFallback>{member.name.charAt(0).toUpperCase()}</AvatarFallback>
+                                                    <AvatarFallback>{member.first_name.charAt(0).toUpperCase()}</AvatarFallback>
                                                 </Avatar>
                                                 <div>
-                                                    <p className="font-medium">{member.name}</p>
+                                                    <p className="font-medium">{member.first_name} {member.last_name}</p>
                                                     <p className="text-xs text-muted-foreground">{member.email}</p>
                                                 </div>
                                             </div>
@@ -361,7 +364,7 @@ export default function OrganizationShow({
                                                             <AlertDialogHeader>
                                                                 <AlertDialogTitle>Remove member?</AlertDialogTitle>
                                                                 <AlertDialogDescription>
-                                                                    Remove <strong>{member.name}</strong> from this organization?
+                                                                    Remove <strong>{member.first_name} {member.last_name}</strong> from this organization?
                                                                 </AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>

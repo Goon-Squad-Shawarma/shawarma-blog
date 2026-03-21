@@ -1,5 +1,6 @@
 import { usePage } from '@inertiajs/react';
 import { ChevronsUpDown } from 'lucide-react';
+import { useState } from 'react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -14,13 +15,17 @@ import {
 import { UserInfo } from '@/components/user-info';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ProfilePopup from '@/components/profile-popup';
 
 export function NavUser() {
     const { auth } = usePage().props;
     const { state } = useSidebar();
     const isMobile = useIsMobile();
+    const [profileOpen, setProfileOpen] = useState(false);
 
     return (
+        <>
+        <ProfilePopup open={profileOpen} onOpenChange={setProfileOpen} />
         <SidebarMenu>
             <SidebarMenuItem>
                 <DropdownMenu>
@@ -45,10 +50,11 @@ export function NavUser() {
                                   : 'bottom'
                         }
                     >
-                        <UserMenuContent user={auth.user} />
+                        <UserMenuContent user={auth.user} onProfileClick={() => setProfileOpen(true)} />
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>
         </SidebarMenu>
+        </>
     );
 }

@@ -2,7 +2,7 @@ import { useState, FormEvent } from 'react'
 import { router, usePage } from '@inertiajs/react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { ThumbsUp, ThumbsDown, Trash2, ChevronDown, ChevronUp, Pencil } from 'lucide-react'
 import {
@@ -30,7 +30,7 @@ interface Comment {
   id: number
   content: string
   created_at: string
-  user: { id: number; name: string }
+  user: { id: number; first_name: string; last_name: string; avatar_url?: string | null }
   likes: CommentLike[]
   replies: Comment[]
 }
@@ -153,8 +153,9 @@ function CommentItem({ comment, blogSlug, currentUserId, depth = 0, threadId }: 
   return (
     <div className="flex gap-3">
       <Avatar className={depth === 0 ? 'h-10 w-10 shrink-0' : 'h-8 w-8 shrink-0'}>
+        <AvatarImage src={comment.user.avatar_url ?? undefined} alt={`${comment.user.first_name} ${comment.user.last_name}`} />
         <AvatarFallback className={depth === 0 ? 'text-sm' : 'text-xs'}>
-          {comment.user.name.charAt(0).toUpperCase()}
+          {comment.user.first_name.charAt(0).toUpperCase()}
         </AvatarFallback>
       </Avatar>
 
@@ -162,7 +163,7 @@ function CommentItem({ comment, blogSlug, currentUserId, depth = 0, threadId }: 
         {/* Header */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-semibold">{comment.user.name}</span>
+            <span className="text-sm font-semibold">{`${comment.user.first_name} ${comment.user.last_name}`}</span>
             <span className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
             </span>
@@ -280,7 +281,7 @@ function CommentItem({ comment, blogSlug, currentUserId, depth = 0, threadId }: 
               <Textarea
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
-                placeholder={depth > 0 ? `@${comment.user.name} ` : `Reply to ${comment.user.name}…`}
+                placeholder={depth > 0 ? `@${comment.user.first_name} ` : `Reply to ${comment.user.first_name}…`}
                 rows={2}
                 className="text-sm resize-none border-0 border-b rounded-none px-0 focus-visible:ring-0 focus-visible:border-foreground"
                 autoFocus
@@ -377,7 +378,7 @@ export default function CommentSection({ blog }: CommentSectionProps) {
       <div className="flex gap-3">
         <Avatar className="h-10 w-10 shrink-0">
           <AvatarFallback className="text-sm">
-            {auth?.user?.name?.charAt(0).toUpperCase() ?? '?'}
+            {auth?.user?.first_name?.charAt(0).toUpperCase() ?? '?'}
           </AvatarFallback>
         </Avatar>
         <form onSubmit={handleSubmit} className="flex-1 space-y-2">

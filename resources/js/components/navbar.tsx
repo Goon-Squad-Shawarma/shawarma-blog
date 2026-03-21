@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useId, useRef, useState } from "react
 
 import NotificationMenu from "@/components/navbar-components/notification-menu";
 import ThemeToggle from "@/components/navbar-components/theme-toggle";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -29,7 +29,9 @@ interface Tag {
 
 interface Author {
   id: number;
-  name: string;
+  first_name: string;
+  last_name: string;
+  avatar_url?: string | null;
 }
 
 interface Organization {
@@ -124,7 +126,7 @@ export default function Navbar({ breadcrumbs = [], showSearch = false }: NavbarP
       fetch(`/blogs/authors?search=&page=1`).then((r) => r.json()).then((data) => {
         const found = (data.data as Author[]).find((a) => String(a.id) === filters.author);
         if (found) {
-          setSelectedAuthorName(found.name);
+          setSelectedAuthorName(`${found.first_name} ${found.last_name}`);
         }
       });
     }
@@ -316,15 +318,15 @@ export default function Navbar({ breadcrumbs = [], showSearch = false }: NavbarP
                               type="button"
                               onClick={() => {
                                 setSelectedAuthorId(String(author.id));
-                                setSelectedAuthorName(author.name);
+                                setSelectedAuthorName(`${author.first_name} ${author.last_name}`);
                                 setAuthorSearch("");
                               }}
                               className="flex shrink-0 flex-col items-center gap-1 rounded-md p-1.5 transition-colors hover:bg-muted"
                             >
                               <Avatar className="size-9">
-                                <AvatarFallback className="text-xs">{getInitials(author.name)}</AvatarFallback>
+                                <AvatarFallback className="text-xs">{getInitials(`${author.first_name} ${author.last_name}`)}</AvatarFallback>
                               </Avatar>
-                              <span className="w-12 truncate text-center text-[10px] leading-tight text-muted-foreground">{author.name}</span>
+                              <span className="w-12 truncate text-center text-[10px] leading-tight text-muted-foreground">{`${author.first_name} ${author.last_name}`}</span>
                             </button>
                           ))}
                           {authorHasMore && (

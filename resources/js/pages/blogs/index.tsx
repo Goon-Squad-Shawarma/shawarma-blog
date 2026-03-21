@@ -26,7 +26,7 @@ interface Blog {
   banner_url: string | null
   published_at: string
   reading_time: number
-  user: { id: number; name: string }
+  user: { id: number; first_name: string; last_name: string; avatar_url?: string | null }
   tags: Tag[]
 }
 
@@ -113,14 +113,15 @@ export default function BlogIndex({ blogs, tags, filters }: BlogIndexProps) {
                 {/* Author and date */}
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>{blog.user.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={blog.user.avatar_url ?? undefined} alt={`${blog.user.first_name} ${blog.user.last_name}`} />
+                    <AvatarFallback>{blog.user.first_name.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <Link
                       href={usersShow({ id: blog.user.id }).url}
                       className="text-sm font-medium truncate block hover:underline"
                     >
-                      {blog.user.name}
+                      {`${blog.user.first_name} ${blog.user.last_name}`}
                     </Link>
                     <p className="text-xs text-muted-foreground">
                       {new Date(blog.published_at).toLocaleDateString()}

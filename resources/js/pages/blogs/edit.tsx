@@ -6,7 +6,6 @@ import type { BreadcrumbItem } from '@/types'
 import { index as blogsIndex, show as blogsShow, edit as blogsEdit, update as blogsUpdate } from '@/routes/blogs'
 import { Editor } from '@/components/blocks/editor-00/editor'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
@@ -16,6 +15,7 @@ import TagSelector from '@/components/tag-selector'
 import DateTimePicker from '@/components/calendar'
 import { format } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
+import BannerUpload from '@/components/file-upload'
 
 interface Tag {
     id: number
@@ -58,11 +58,20 @@ export default function BlogEdit({ blog, tags, organizations }: BlogEditProps) {
         initialEditorState = undefined
     }
 
-    const { data, setData, patch, processing, errors } = useForm({
+    const { data, setData, patch, processing, errors } = useForm<{
+        title: string
+        subtitle: string
+        content: string
+        banner: File | null
+        visibility: 'public' | 'private'
+        published_at: string
+        organization_id: string
+        tags: number[]
+    }>({
         title: blog.title,
         subtitle: blog.subtitle,
         content: blog.content,
-        banner_url: blog.banner_url ?? '',
+        banner: null,
         visibility: blog.visibility,
         published_at: blog.published_at ?? '',
         organization_id: blog.organization_id ? String(blog.organization_id) : '',
@@ -143,15 +152,12 @@ export default function BlogEdit({ blog, tags, organizations }: BlogEditProps) {
                     )}
 
                     <div className="space-y-1.5">
-                        <Label htmlFor="banner_url">Banner URL</Label>
-                        <Input
-                            id="banner_url"
-                            type="url"
-                            value={data.banner_url}
-                            onChange={(e) => setData('banner_url', e.target.value)}
-                            placeholder="https://…"
+                        <Label>Banner Image</Label>
+                        <BannerUpload
+                            onChange={(file) => setData('banner', file)}
+                            initialUrl={blog.banner_url}
+                            error={errors.banner}
                         />
-                        <InputError message={errors.banner_url} />
                     </div>
 
                     <div className="space-y-1.5">
