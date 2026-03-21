@@ -17,6 +17,7 @@
         "laravel/wayfinder": "^0.1.9",
         "league/flysystem-aws-s3-v3": "^3.32",
         "offload-project/laravel-invite-only": "^2.1",
+        "predis/predis": "^3.4",
         "resend/resend-laravel": "^1.3"
     },
     "require-dev": {
