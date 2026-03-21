@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'mvp_showcase_url' => env('MVP_SHOWCASE_URL'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

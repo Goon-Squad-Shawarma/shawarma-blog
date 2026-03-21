@@ -17,6 +17,12 @@ Route::get('/', function () {
     ]);
 })->name('home');
 
+Route::get('/mvp', function () {
+    return Inertia::render('mvp', [
+        'videoUrl' => config('app.mvp_showcase_url'),
+    ]);
+})->name('mvp');
+
 Route::redirect('dashboard', '/blogs')->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
