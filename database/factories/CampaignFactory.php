@@ -21,6 +21,7 @@ class CampaignFactory extends Factory
             'body' => '<p>'.fake()->paragraphs(3, true).'</p>',
             'status' => CampaignStatus::Draft,
             'recipient_count' => 0,
+            'opened_count' => 0,
             'sent_at' => null,
         ];
     }

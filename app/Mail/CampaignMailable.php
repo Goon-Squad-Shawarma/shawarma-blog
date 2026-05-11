@@ -17,6 +17,7 @@ class CampaignMailable extends Mailable
     public function __construct(
         public Campaign $campaign,
         public User $recipient,
+        public ?string $trackingToken = null,
     ) {}
 
     public function envelope(): Envelope
@@ -30,7 +31,11 @@ class CampaignMailable extends Mailable
     {
         return new Content(
             markdown: 'emails.campaign',
-            with: compact('campaign', 'recipient'),
+            with: [
+                'campaign' => $this->campaign,
+                'recipient' => $this->recipient,
+                'trackingToken' => $this->trackingToken,
+            ],
         );
     }
 }

@@ -23,6 +23,10 @@ export function NavUser() {
     const isMobile = useIsMobile();
     const [profileOpen, setProfileOpen] = useState(false);
 
+    if (!auth?.user) {
+        return null;
+    }
+
     return (
         <>
         <ProfilePopup open={profileOpen} onOpenChange={setProfileOpen} />

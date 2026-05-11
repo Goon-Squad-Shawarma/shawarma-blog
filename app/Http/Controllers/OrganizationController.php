@@ -7,6 +7,7 @@ use App\Models\Follow;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class OrganizationController extends Controller
@@ -45,8 +46,15 @@ class OrganizationController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'logo_url' => 'nullable|url',
+            'logo' => 'nullable|image|max:5120',
         ]);
+
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('org-logos', ['disk' => 's3']);
+            $validated['logo_url'] = Storage::disk('s3')->url($path);
+        }
+
+        unset($validated['logo']);
 
         $organization = auth()->user()->ownedOrganizations()->create($validated);
 
@@ -107,8 +115,15 @@ class OrganizationController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
-            'logo_url' => 'nullable|url',
+            'logo' => 'nullable|image|max:5120',
         ]);
+
+        if ($request->hasFile('logo')) {
+            $path = $request->file('logo')->store('org-logos', ['disk' => 's3']);
+            $validated['logo_url'] = Storage::disk('s3')->url($path);
+        }
+
+        unset($validated['logo']);
 
         $organization->update($validated);
 

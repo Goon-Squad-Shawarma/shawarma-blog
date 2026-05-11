@@ -4,12 +4,13 @@ import type { BreadcrumbItem } from '@/types'
 import { index as organizationsIndex } from '@/routes/organizations'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 interface Organization {
   id: number
   name: string
   description: string
+  logo_url: string | null
   created_at: string
 }
 
@@ -35,12 +36,20 @@ export default function OrganizationIndex({ organizations }: OrganizationIndexPr
             {organizations.map((org: Organization) => (
               <Card key={org.id} className="hover:shadow-lg transition-shadow flex flex-col">
                 <CardHeader>
-                  <CardTitle className="hover:underline">
-                    <Link href={`/organizations/${org.id}`}>{org.name}</Link>
-                  </CardTitle>
-                  <CardDescription className="line-clamp-3">
-                    {org.description}
-                  </CardDescription>
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-12 w-12 shrink-0 rounded-md">
+                      {org.logo_url ? <AvatarImage src={org.logo_url} alt={org.name} className="object-cover" /> : null}
+                      <AvatarFallback className="rounded-md">{org.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <CardTitle className="truncate hover:underline">
+                        <Link href={`/organizations/${org.id}`}>{org.name}</Link>
+                      </CardTitle>
+                      <CardDescription className="mt-1 line-clamp-3">
+                        {org.description}
+                      </CardDescription>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent className="flex-1">
                   <p className="text-xs text-muted-foreground">

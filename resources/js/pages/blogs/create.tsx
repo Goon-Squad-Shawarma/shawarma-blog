@@ -75,14 +75,22 @@ export default function BlogCreate({ tags, organizations }: BlogCreateProps) {
     const handleAiDraft = async () => {
         setAiLoading(true)
         try {
+            const csrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/)
+            const csrfToken = csrfMatch ? decodeURIComponent(csrfMatch[1]) : ''
             const res = await fetch(aiDraft().url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+                    Accept: 'application/json',
+                    'X-XSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
+                credentials: 'same-origin',
                 body: JSON.stringify({ topic: aiTopic, outline: aiOutline || undefined }),
             })
+            if (!res.ok) {
+                throw new Error(`Request failed: ${res.status}`)
+            }
             const json = await res.json()
             setData('title', json.title)
             setAiHtml(json.content)
@@ -90,6 +98,8 @@ export default function BlogCreate({ tags, organizations }: BlogCreateProps) {
             setAiOpen(false)
             setAiTopic('')
             setAiOutline('')
+        } catch (err) {
+            console.error('AI draft failed', err)
         } finally {
             setAiLoading(false)
         }

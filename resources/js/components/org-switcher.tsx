@@ -1,5 +1,5 @@
-import { Link, usePage } from '@inertiajs/react';
-import { Building2, ChevronsUpDown, Plus } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { Building2, ChevronsUpDown, Plus, User } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,17 +15,25 @@ import {
 } from '@/components/ui/sidebar';
 import { create as orgsCreate, show as orgsShow } from '@/routes/organizations';
 import type { Organization } from '@/types/auth';
+import { clearActiveOrg, setActiveOrg, useActiveOrgId } from '@/hooks/use-active-org';
 
 export function OrgSwitcher() {
     const { auth } = usePage().props;
-    const { url } = usePage();
     const organizations: Organization[] = auth.organizations ?? [];
+    const activeOrgId = useActiveOrgId();
+    const activeOrg = organizations.find((o) => o.id === activeOrgId) ?? null;
 
-    const activeOrg =
-        organizations.find((org) => {
-            const base = `/organizations/${org.id}`;
-            return url === base || (url as string).startsWith(base + '/');
-        }) ?? organizations[0] ?? null;
+    const handlePersonal = (e: React.MouseEvent) => {
+        e.preventDefault();
+        clearActiveOrg();
+        router.visit('/bookmarks');
+    };
+
+    const handlePickOrg = (e: React.MouseEvent, org: Organization) => {
+        e.preventDefault();
+        setActiveOrg(org.id);
+        router.visit(orgsShow(org.id).url);
+    };
 
     if (organizations.length === 0) {
         return (
@@ -63,7 +71,10 @@ export function OrgSwitcher() {
                                 )}
                             </div>
                             <div className="ml-1 grid flex-1 text-left text-sm leading-tight">
-                                <span className="truncate font-semibold">{activeOrg?.name ?? 'Organization'}</span>
+                                <span className="truncate font-semibold">{activeOrg?.name ?? 'Personal'}</span>
+                                {!activeOrg && (
+                                    <span className="truncate text-xs text-muted-foreground">Switch organization</span>
+                                )}
                             </div>
                             <ChevronsUpDown className="ms-auto size-4 text-muted-foreground/60" aria-hidden="true" />
                         </SidebarMenuButton>
@@ -75,11 +86,24 @@ export function OrgSwitcher() {
                         sideOffset={4}
                     >
                         <DropdownMenuLabel className="text-xs uppercase text-muted-foreground">
+                            Account
+                        </DropdownMenuLabel>
+                        <DropdownMenuItem asChild className="gap-2 p-2">
+                            <Link href="/bookmarks" onClick={handlePersonal}>
+                                <div className="flex size-6 items-center justify-center rounded-md bg-muted text-foreground">
+                                    <User size={12} />
+                                </div>
+                                <span className="font-medium">Personal</span>
+                                {!activeOrg && <div className="ml-auto size-2 rounded-full bg-primary" />}
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel className="text-xs uppercase text-muted-foreground">
                             Organizations
                         </DropdownMenuLabel>
                         {organizations.map((org) => (
                             <DropdownMenuItem key={org.id} asChild className="gap-2 p-2">
-                                <Link href={orgsShow(org.id).url}>
+                                <Link href={orgsShow(org.id).url} onClick={(e) => handlePickOrg(e, org)}>
                                     <div className="flex size-6 items-center justify-center overflow-hidden rounded-md bg-muted text-foreground">
                                         {org.logo_url ? (
                                             <img src={org.logo_url} alt={org.name} className="h-full w-full object-cover" />

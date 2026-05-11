@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Campaign extends Model
 {
@@ -21,6 +22,7 @@ class Campaign extends Model
         'body',
         'status',
         'recipient_count',
+        'opened_count',
         'sent_at',
     ];
 
@@ -40,6 +42,11 @@ class Campaign extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function recipients(): HasMany
+    {
+        return $this->hasMany(CampaignRecipient::class);
     }
 
     public function scopeDraft(Builder $query): Builder

@@ -40,6 +40,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'background_url',
         'website',
         'bio',
+        'email_preferences',
+        'unsubscribe_token',
     ];
 
     /**
@@ -65,7 +67,42 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'email_preferences' => 'array',
         ];
+    }
+
+    /**
+     * Default email notification preferences.
+     *
+     * @return array{campaigns: bool, daily_digest: bool, digest_frequency: string}
+     */
+    public static function defaultEmailPreferences(): array
+    {
+        return [
+            'campaigns' => true,
+            'daily_digest' => true,
+            'digest_frequency' => 'daily',
+        ];
+    }
+
+    /**
+     * @return array{campaigns: bool, daily_digest: bool, digest_frequency: string}
+     */
+    public function effectiveEmailPreferences(): array
+    {
+        return array_merge(self::defaultEmailPreferences(), $this->email_preferences ?? []);
+    }
+
+    public function wantsCampaigns(): bool
+    {
+        return (bool) ($this->effectiveEmailPreferences()['campaigns'] ?? true);
+    }
+
+    public function wantsDailyDigest(): bool
+    {
+        $prefs = $this->effectiveEmailPreferences();
+
+        return (bool) ($prefs['daily_digest'] ?? true) && ($prefs['digest_frequency'] ?? 'daily') !== 'off';
     }
 
     protected function avatarUrl(): Attribute
@@ -108,12 +145,20 @@ class User extends Authenticatable implements MustVerifyEmail
             if (empty($user->uuid)) {
                 $user->uuid = (string) Str::uuid();
             }
+            if (empty($user->unsubscribe_token)) {
+                $user->unsubscribe_token = (string) Str::random(48);
+            }
         });
     }
 
     public function blogs(): HasMany
     {
         return $this->hasMany(Blog::class);
+    }
+
+    public function threads(): HasMany
+    {
+        return $this->hasMany(Thread::class);
     }
 
     public function comments(): HasMany

@@ -48,5 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'status' => $status,
                 ])->toResponse($request)->setStatusCode($status);
             }
+
+            return $response;
         });
     })->create();

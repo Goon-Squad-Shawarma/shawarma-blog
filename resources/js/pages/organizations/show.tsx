@@ -15,6 +15,7 @@ import {
     follow as organizationsFollow,
     unfollow as organizationsUnfollow,
 } from '@/routes/organizations'
+import { organization as analyticsOrganization } from '@/routes/analytics'
 import { show as blogsShow } from '@/routes/blogs'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,7 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import { Trash2, UserPlus, Users, BookOpen, Crown, Bell, BellOff } from 'lucide-react'
+import { Trash2, UserPlus, Users, BookOpen, Crown, Bell, BellOff, BarChart3 } from 'lucide-react'
 import {
     AlertDialog,
     AlertDialogAction,
@@ -104,6 +105,7 @@ interface OrganizationShowProps {
 
 export default function OrganizationShow({
     organization,
+    isMember,
     isFollowing: initialIsFollowing,
     followersCount: initialFollowersCount,
     canUpdate,
@@ -199,11 +201,21 @@ export default function OrganizationShow({
                 <Card>
                     <CardHeader>
                         <div className="flex items-start justify-between gap-4">
-                            <div className="flex-1 min-w-0">
-                                <CardTitle className="text-3xl">{organization.name}</CardTitle>
-                                {organization.description && (
-                                    <CardDescription className="mt-2 text-base">{organization.description}</CardDescription>
-                                )}
+                            <div className="flex flex-1 min-w-0 items-start gap-4">
+                                <Avatar className="h-20 w-20 shrink-0 rounded-md">
+                                    {organization.logo_url ? (
+                                        <AvatarImage src={organization.logo_url} alt={organization.name} className="object-cover" />
+                                    ) : null}
+                                    <AvatarFallback className="rounded-md text-2xl">
+                                        {organization.name.charAt(0).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0 flex-1">
+                                    <CardTitle className="text-3xl">{organization.name}</CardTitle>
+                                    {organization.description && (
+                                        <CardDescription className="mt-2 text-base">{organization.description}</CardDescription>
+                                    )}
+                                </div>
                             </div>
                             <div className="flex shrink-0 flex-wrap gap-2">
                                 {auth?.user && (
@@ -225,6 +237,14 @@ export default function OrganizationShow({
                                             </>
                                         )}
                                     </Button>
+                                )}
+                                {isMember && (
+                                    <Link href={analyticsOrganization(organization.id).url}>
+                                        <Button size="sm" variant="outline">
+                                            <BarChart3 className="mr-2 h-4 w-4" />
+                                            Analytics
+                                        </Button>
+                                    </Link>
                                 )}
                                 {canUpdate && (
                                     <Link href={organizationsEdit(organization).url}>

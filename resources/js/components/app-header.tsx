@@ -74,7 +74,7 @@ export function AppHeader({ breadcrumbs = [] }: Props) {
     const [profileOpen, setProfileOpen] = useState(false);
     return (
         <>
-        <ProfilePopup open={profileOpen} onOpenChange={setProfileOpen} />
+        {auth?.user && <ProfilePopup open={profileOpen} onOpenChange={setProfileOpen} />}
             <div className="border-b border-sidebar-border/80">
                 <div className="mx-auto flex h-16 items-center px-4 md:max-w-7xl">
                     {/* Mobile Menu */}

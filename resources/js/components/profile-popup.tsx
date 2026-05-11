@@ -28,7 +28,7 @@ export default function ProfilePopup({ open, onOpenChange }: { open?: boolean; o
 
   const maxLength = 180;
   const { value: bio, characterCount, handleChange: handleBioChange, maxLength: limit } = useCharacterLimit({
-    initialValue: (user.bio as string | null) ?? "",
+    initialValue: (user?.bio as string | null) ?? "",
     maxLength,
   });
 
@@ -43,10 +43,14 @@ export default function ProfilePopup({ open, onOpenChange }: { open?: boolean; o
   const [{ files: bgFiles }, { removeFile: removeBg, openFileDialog: openBgDialog, getInputProps: getBgInputProps }] =
     useFileUpload({
       accept: "image/*",
-      initialFiles: user.background_url
+      initialFiles: user?.background_url
         ? [{ id: "bg-initial", name: "background.jpg", size: 0, type: "image/jpeg", url: user.background_url as string }]
         : [],
     });
+
+  if (!user) {
+    return null;
+  }
 
   const avatarPreview = avatarFiles[0]?.preview ?? (user.avatar_url as string | null) ?? null;
   const bgPreview = bgFiles[0]?.preview ?? null;

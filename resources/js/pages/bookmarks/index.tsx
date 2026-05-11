@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import { show as blogsShow } from '@/routes/blogs';
+import { destroy as bookmarksDestroy } from '@/routes/bookmarks';
 import { show as usersShow } from '@/routes/users';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,7 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Bookmark } from 'lucide-react';
+import { Bookmark, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface Blog {
     id: number;
@@ -43,14 +45,40 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Bookmarks', href: '/bookmarks' },
 ];
 
+function getCsrf(): string {
+    const m = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+    return m ? decodeURIComponent(m[1]) : '';
+}
+
 export default function BookmarksIndex({ bookmarks }: BookmarksIndexProps) {
+    const [removed, setRemoved] = useState<Set<number>>(new Set());
+
+    const handleRemove = async (bookmarkId: number, blogSlug: string) => {
+        setRemoved((prev) => new Set(prev).add(bookmarkId));
+        try {
+            const route = bookmarksDestroy({ blog: blogSlug });
+            const res = await fetch(route.url, {
+                method: route.method.toUpperCase(),
+                headers: { 'X-XSRF-TOKEN': getCsrf(), Accept: 'application/json' },
+                credentials: 'include',
+            });
+            if (!res.ok) throw new Error();
+        } catch {
+            setRemoved((prev) => {
+                const next = new Set(prev);
+                next.delete(bookmarkId);
+                return next;
+            });
+        }
+    };
+
+    const visible = bookmarks.data.filter((b) => !removed.has(b.id));
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Bookmarks" />
-            <div className="p-4 space-y-6">
-                <h1 className="text-2xl font-bold">Saved Posts</h1>
-
-                {bookmarks.data.length === 0 ? (
+            <div className="space-y-6 p-4">
+                {visible.length === 0 ? (
                     <Empty>
                         <EmptyHeader>
                             <EmptyMedia variant="icon"><Bookmark /></EmptyMedia>
@@ -64,7 +92,7 @@ export default function BookmarksIndex({ bookmarks }: BookmarksIndexProps) {
                 ) : (
                     <>
                         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {bookmarks.data.map(({ id, blog }) => (
+                            {visible.map(({ id, blog }) => (
                                 <Card key={id} className="flex flex-col hover:shadow-lg transition-shadow">
                                     {blog.banner_url && (
                                         <div className="h-48 overflow-hidden rounded-t-lg bg-muted">
@@ -91,18 +119,34 @@ export default function BookmarksIndex({ bookmarks }: BookmarksIndexProps) {
                                                 <AvatarFallback>{blog.user.first_name.charAt(0)}</AvatarFallback>
                                             </Avatar>
                                             <div className="flex-1 min-w-0">
-                                                <Link href={usersShow({ id: blog.user.id }).url} className="text-sm font-medium truncate block hover:underline">
+                                                <Link
+                                                    href={usersShow({ user: blog.user.id }).url}
+                                                    className="text-sm font-medium truncate block hover:underline"
+                                                >
                                                     {blog.user.first_name} {blog.user.last_name}
                                                 </Link>
-                                                <p className="text-xs text-muted-foreground">{new Date(blog.published_at).toLocaleDateString()}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {new Date(blog.published_at).toLocaleDateString()}
+                                                </p>
                                             </div>
                                         </div>
                                     </CardContent>
                                     <CardFooter className="flex items-center justify-between text-xs text-muted-foreground">
                                         <span>{blog.reading_time} min read</span>
-                                        <Link href={blogsShow({ slug: blog.slug }).url}>
-                                            <Button variant="ghost" size="sm">Read More →</Button>
-                                        </Link>
+                                        <div className="flex items-center gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleRemove(id, blog.slug)}
+                                                aria-label="Remove bookmark"
+                                                className="text-muted-foreground hover:text-destructive"
+                                            >
+                                                <Trash2 className="size-3.5" />
+                                            </Button>
+                                            <Link href={blogsShow({ slug: blog.slug }).url}>
+                                                <Button variant="ghost" size="sm">Read More →</Button>
+                                            </Link>
+                                        </div>
                                     </CardFooter>
                                 </Card>
                             ))}
@@ -119,7 +163,10 @@ export default function BookmarksIndex({ bookmarks }: BookmarksIndexProps) {
                                         )}
                                         {Array.from({ length: bookmarks.last_page }).map((_, i) => (
                                             <PaginationItem key={i + 1}>
-                                                <PaginationLink href={`/bookmarks?page=${i + 1}`} isActive={i + 1 === bookmarks.current_page}>
+                                                <PaginationLink
+                                                    href={`/bookmarks?page=${i + 1}`}
+                                                    isActive={i + 1 === bookmarks.current_page}
+                                                >
                                                     {i + 1}
                                                 </PaginationLink>
                                             </PaginationItem>

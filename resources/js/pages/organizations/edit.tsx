@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react'
-import { FormEvent } from 'react'
+import { ChangeEvent, FormEvent, useRef, useState } from 'react'
 import AppLayout from '@/layouts/app-layout'
 import type { BreadcrumbItem } from '@/types'
 import { index as organizationsIndex, show as organizationsShow, edit as organizationsEdit } from '@/routes/organizations'
@@ -7,12 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import InputError from '@/components/input-error'
+import { ImagePlus, Trash2 } from 'lucide-react'
 
 interface Organization {
   id: number
   name: string
   description: string
+  logo_url: string | null
 }
 
 interface OrganizationEditProps {
@@ -20,14 +23,40 @@ interface OrganizationEditProps {
 }
 
 export default function OrganizationEdit({ organization }: OrganizationEditProps) {
-  const { data, setData, patch, processing, errors } = useForm({
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(organization.logo_url)
+
+  const { data, setData, post, processing, errors } = useForm<{
+    _method: string
+    name: string
+    description: string
+    logo: File | null
+  }>({
+    _method: 'patch',
     name: organization.name,
-    description: organization.description,
+    description: organization.description ?? '',
+    logo: null,
   })
+
+  const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null
+    setData('logo', file)
+    if (file) {
+      setLogoPreview(URL.createObjectURL(file))
+    }
+  }
+
+  const removeLogo = () => {
+    setData('logo', null)
+    setLogoPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    patch(`/organizations/${organization.id}`)
+    post(`/organizations/${organization.id}`, {
+      forceFormData: true,
+    })
   }
 
   const breadcrumbs: BreadcrumbItem[] = [
@@ -47,6 +76,40 @@ export default function OrganizationEdit({ organization }: OrganizationEditProps
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Logo */}
+          <div className="space-y-2">
+            <Label>Logo</Label>
+            <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20 rounded-md">
+                {logoPreview ? <AvatarImage src={logoPreview} alt={organization.name} className="object-cover" /> : null}
+                <AvatarFallback className="rounded-md text-lg">{organization.name.charAt(0).toUpperCase() || '?'}</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoChange}
+                />
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                    <ImagePlus className="mr-2 h-4 w-4" />
+                    {logoPreview ? 'Change' : 'Upload logo'}
+                  </Button>
+                  {logoPreview && (
+                    <Button type="button" variant="ghost" size="sm" onClick={removeLogo}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Remove
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">PNG, JPG or WebP. Max 5MB.</p>
+              </div>
+            </div>
+            <InputError message={errors.logo} />
+          </div>
+
           {/* Name */}
           <div className="space-y-2">
             <Label htmlFor="name">Organization Name</Label>

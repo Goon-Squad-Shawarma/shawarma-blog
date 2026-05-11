@@ -17,8 +17,6 @@ class BlogViewFactory extends Factory
         return [
             'blog_id' => Blog::factory(),
             'user_id' => User::factory(),
-            'ip_address' => fake()->ipv4(),
-            'session_id' => fake()->uuid(),
         ];
     }
 
@@ -26,7 +24,6 @@ class BlogViewFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'user_id' => null,
-            'ip_address' => fake()->ipv4(),
         ]);
     }
 }

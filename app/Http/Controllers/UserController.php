@@ -107,4 +107,23 @@ class UserController extends Controller
             'following' => $following,
         ]);
     }
+
+    /**
+     * Display the authenticated user's network (followers + following).
+     */
+    public function network(Request $request)
+    {
+        $user = auth()->user();
+
+        return Inertia::render('users/network', [
+            'followers' => $user->followers()
+                ->select('users.id', 'first_name', 'last_name', 'avatar_url', 'bio')
+                ->paginate(20, ['*'], 'followersPage')
+                ->withQueryString(),
+            'following' => $user->followingUsers()
+                ->select('users.id', 'first_name', 'last_name', 'avatar_url', 'bio')
+                ->paginate(20, ['*'], 'followingPage')
+                ->withQueryString(),
+        ]);
+    }
 }
