@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\LikeType;
+use App\Jobs\NotifyOnLikeJob;
 use App\Models\Blog;
 use App\Models\Comment;
 use App\Models\Like;
@@ -23,6 +24,8 @@ class LikeController extends Controller
             'likeable_type' => Blog::class,
             'type' => LikeType::Like->value,
         ]);
+
+        NotifyOnLikeJob::dispatch($blog->load('user'), auth()->user());
 
         return response()->json([
             'liked' => true,

@@ -21,6 +21,7 @@ import {
 import { Heart, MessageCircle, Edit2, Trash2 } from 'lucide-react'
 import CommentSection from '@/components/comments/comment-section'
 import LikeButton from '@/components/likes/like-button'
+import BookmarkButton from '@/components/bookmarks/bookmark-button'
 import ShareButton from '@/components/share-button'
 import { RichTextViewer } from '@/components/blocks/editor-00/rich-text-viewer'
 
@@ -47,9 +48,12 @@ interface BlogShowProps {
   canComment: boolean
   canLike: boolean
   userLiked: boolean
+  views_count: number
+  bookmarks_count: number
+  is_bookmarked: boolean
 }
 
-export default function BlogShow({ blog, canUpdate, canDelete, canComment, canLike, userLiked }: BlogShowProps) {
+export default function BlogShow({ blog, canUpdate, canDelete, canComment, canLike, userLiked, views_count, bookmarks_count, is_bookmarked }: BlogShowProps) {
   const { delete: destroy } = useForm()
 
   const handleDelete = () => {
@@ -177,6 +181,11 @@ export default function BlogShow({ blog, canUpdate, canDelete, canComment, canLi
               likesCount={blog.likes.length}
             />
           )}
+          <BookmarkButton
+            blogSlug={blog.slug}
+            bookmarked={is_bookmarked}
+            bookmarksCount={bookmarks_count}
+          />
           {canComment && (
             <Button
               variant="ghost"

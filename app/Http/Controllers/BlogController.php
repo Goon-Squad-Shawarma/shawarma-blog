@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OrganizationRole;
+use App\Jobs\NotifyFollowersOfNewBlogJob;
+use App\Jobs\TrackBlogViewJob;
 use App\Models\Blog;
 use App\Models\Organization;
 use App\Models\Tag;
@@ -50,6 +52,14 @@ class BlogController extends Controller
             'tags' => Tag::orderBy('name')->get(['id', 'name', 'slug']),
             'organizations' => Organization::has('blogs')->orderBy('name')->get(['id', 'name', 'slug']),
             'filters' => $request->only(['search', 'tags', 'author', 'organization']),
+            'trendingBlogs' => Blog::where('visibility', 'public')
+                ->whereNotNull('published_at')
+                ->where('published_at', '>=', now()->subDays(7))
+                ->withCount(['likes', 'views'])
+                ->orderByRaw('(likes_count + views_count) DESC')
+                ->limit(5)
+                ->with('user:id,first_name,last_name')
+                ->get(['id', 'title', 'slug', 'reading_time', 'user_id']),
         ]);
     }
 
@@ -141,6 +151,8 @@ class BlogController extends Controller
 
         $blog->load('user', 'organization', 'tags', 'comments.user', 'comments.likes', 'comments.replies.user', 'comments.replies.likes', 'likes');
 
+        TrackBlogViewJob::dispatch($blog, auth()->id());
+
         return Inertia::render('blogs/show', [
             'blog' => $blog,
             'canUpdate' => auth()->check() && auth()->user()->can('update', $blog),
@@ -148,6 +160,9 @@ class BlogController extends Controller
             'canComment' => auth()->check(),
             'canLike' => auth()->check(),
             'userLiked' => auth()->check() ? $blog->likes()->where('user_id', auth()->id())->exists() : false,
+            'views_count' => $blog->views()->count(),
+            'bookmarks_count' => $blog->bookmarks()->count(),
+            'is_bookmarked' => auth()->check() ? $blog->bookmarks()->where('user_id', auth()->id())->exists() : false,
         ]);
     }
 
@@ -260,6 +275,8 @@ class BlogController extends Controller
         ]);
 
         $blog->update($validated);
+
+        NotifyFollowersOfNewBlogJob::dispatch($blog);
 
         return redirect()->route('blogs.show', $blog)->with('success', 'Blog published successfully.');
     }

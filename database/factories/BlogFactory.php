@@ -3,13 +3,14 @@
 namespace Database\Factories;
 
 use App\Enums\PostVisibility;
+use App\Models\Blog;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Blog>
+ * @extends Factory<Blog>
  */
 class BlogFactory extends Factory
 {
@@ -43,6 +44,17 @@ class BlogFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'published_at' => null,
+        ]);
+    }
+
+    /**
+     * Indicate that the blog is published.
+     */
+    public function published(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'published_at' => fake()->dateTimeBetween('-1 month', 'now'),
+            'visibility' => PostVisibility::PUBLIC,
         ]);
     }
 

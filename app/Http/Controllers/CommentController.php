@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\NotifyOnCommentJob;
 use App\Models\Blog;
 use App\Models\Comment;
 use Illuminate\Http\Request;
@@ -26,7 +27,7 @@ class CommentController extends Controller
             'parent_id' => $validated['parent_id'] ?? null,
         ]);
 
-        $comment->load('user', 'replies');
+        NotifyOnCommentJob::dispatch($comment->load('blog.user', 'parent.user', 'user'));
 
         return redirect()->back();
     }

@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react'
-import { FileTextIcon } from 'lucide-react'
+import { FileTextIcon, Eye, Heart } from 'lucide-react'
 import AppLayout from '@/layouts/app-layout'
 import type { BreadcrumbItem } from '@/types'
 import { index as blogsIndex, show as blogsShow } from '@/routes/blogs'
@@ -40,21 +40,23 @@ interface BlogIndexProps {
   blogs: PaginationData
   tags: Tag[]
   filters: { search?: string; tags?: string[]; author?: string; organization?: string }
+  trendingBlogs: Array<{ id: number; title: string; slug: string; reading_time: number; user: { first_name: string; last_name: string }; likes_count: number; views_count: number }>
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Blogs', href: blogsIndex().url },
 ]
 
-export default function BlogIndex({ blogs, tags, filters }: BlogIndexProps) {
+export default function BlogIndex({ blogs, tags, filters, trendingBlogs }: BlogIndexProps) {
   const { auth } = usePage().props
 
   return (
     <AppLayout breadcrumbs={breadcrumbs} showSearch={true}>
       <Head title="Blogs" />
-      
-      <div className="p-4 space-y-8">
-        {/* Blogs Grid */}
+
+      <div className="p-4 flex gap-8">
+        {/* Main content */}
+        <div className="flex-1 space-y-8">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {blogs.data.map((blog: Blog) => (
             <Card key={blog.id} className="flex flex-col hover:shadow-lg transition-shadow">
@@ -196,6 +198,33 @@ export default function BlogIndex({ blogs, tags, filters }: BlogIndexProps) {
           </div>
         )}
       </div>
+        {/* end flex-1 main */}
+
+        {/* Trending Sidebar */}
+        {trendingBlogs?.length > 0 && (
+          <aside className="hidden lg:block w-72 shrink-0">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Trending This Week</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {trendingBlogs.map((blog) => (
+                  <div key={blog.id} className="space-y-1">
+                    <Link href={blogsShow({ slug: blog.slug }).url} className="text-sm font-medium line-clamp-2 hover:underline block">
+                      {blog.title}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">{blog.user.first_name} {blog.user.last_name}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Heart className="h-3 w-3" />{blog.likes_count}</span>
+                      <span className="flex items-center gap-1"><Eye className="h-3 w-3" />{blog.views_count}</span>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </aside>
+        )}
+      </div>{/* end p-4 flex gap-8 */}
     </AppLayout>
   )
 }
