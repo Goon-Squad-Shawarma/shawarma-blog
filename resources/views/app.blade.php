@@ -42,6 +42,15 @@
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/pages/{$page['component']}.tsx"])
         @inertiaHead
+
+        {{-- Google Analytics --}}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-PH9FWXXZSK"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-PH9FWXXZSK');
+        </script>
     </head>
     <body class="font-sans antialiased">
         @inertia

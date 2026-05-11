@@ -2,13 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Blog;
+use App\Models\BlogView;
+use App\Models\Bookmark;
+use App\Models\Campaign;
 use App\Models\Comment;
-use App\Models\Like;
-use App\Models\Tag;
-use App\Models\Organization;
 use App\Models\Follow;
+use App\Models\Like;
+use App\Models\Organization;
+use App\Models\Tag;
+use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -76,7 +80,7 @@ class DatabaseSeeder extends Seeder
         $likeCount = 0;
         $maxAttempts = 200;
         $attempts = 0;
-        
+
         while ($likeCount < 50 && $attempts < $maxAttempts) {
             try {
                 Like::factory()
@@ -88,7 +92,7 @@ class DatabaseSeeder extends Seeder
                     })
                     ->create();
                 $likeCount++;
-            } catch (\Illuminate\Database\QueryException $e) {
+            } catch (QueryException $e) {
                 // Skip duplicate likes
                 $attempts++;
             }
@@ -140,5 +144,53 @@ class DatabaseSeeder extends Seeder
                 $org->users()->attach($user->id, ['role' => 'member']);
             });
         });
+
+        // Create 3 bookmarks per user (random blogs)
+        $allUsers->each(function ($user) use ($blogs) {
+            $blogsToBookmark = $blogs->random(min(3, $blogs->count()));
+            $blogsToBookmark->each(function ($blog) use ($user) {
+                Bookmark::firstOrCreate([
+                    'user_id' => $user->id,
+                    'blog_id' => $blog->id,
+                ]);
+            });
+        });
+
+        // Create 5-10 blog views per blog (mix of user and guest)
+        $blogs->each(function ($blog) use ($allUsers) {
+            $viewCount = rand(5, 10);
+            $usedUserIds = [];
+
+            for ($i = 0; $i < $viewCount; $i++) {
+                if ($i < 3) {
+                    // User views
+                    $available = $allUsers->whereNotIn('id', $usedUserIds);
+                    if ($available->isEmpty()) {
+                        break;
+                    }
+                    $user = $available->random();
+                    $usedUserIds[] = $user->id;
+                    BlogView::firstOrCreate(
+                        ['blog_id' => $blog->id, 'user_id' => $user->id],
+                        ['ip_address' => fake()->ipv4(), 'session_id' => fake()->uuid()]
+                    );
+                } else {
+                    // Guest views
+                    BlogView::create([
+                        'blog_id' => $blog->id,
+                        'user_id' => null,
+                        'ip_address' => fake()->ipv4(),
+                        'session_id' => fake()->uuid(),
+                    ]);
+                }
+            }
+        });
+
+        // Create 1 draft campaign for the first test user
+        Campaign::factory()->create([
+            'user_id' => $testUser->id,
+            'subject' => 'Welcome to my newsletter!',
+            'body' => '<p>Hello! This is my first email campaign draft.</p>',
+        ]);
     }
 }

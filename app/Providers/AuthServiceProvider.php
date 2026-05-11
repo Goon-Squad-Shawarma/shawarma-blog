@@ -3,11 +3,15 @@
 namespace App\Providers;
 
 use App\Models\Blog;
+use App\Models\Bookmark;
+use App\Models\Campaign;
 use App\Models\Comment;
 use App\Models\Like;
 use App\Models\Organization;
 use App\Models\User;
 use App\Policies\BlogPolicy;
+use App\Policies\BookmarkPolicy;
+use App\Policies\CampaignPolicy;
 use App\Policies\CommentPolicy;
 use App\Policies\LikePolicy;
 use App\Policies\OrganizationPolicy;
@@ -23,6 +27,8 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Blog::class => BlogPolicy::class,
+        Bookmark::class => BookmarkPolicy::class,
+        Campaign::class => CampaignPolicy::class,
         Comment::class => CommentPolicy::class,
         Like::class => LikePolicy::class,
         Organization::class => OrganizationPolicy::class,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\NotifyOnNewFollowerJob;
 use App\Models\Follow;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
@@ -61,6 +62,8 @@ class UserController extends Controller
             'user_id' => auth()->id(),
             'following_user_id' => $user->id,
         ]);
+
+        NotifyOnNewFollowerJob::dispatch(auth()->user(), $user);
 
         return response()->json(['message' => 'Now following user.']);
     }

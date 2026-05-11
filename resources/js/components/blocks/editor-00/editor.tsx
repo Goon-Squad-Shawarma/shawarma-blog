@@ -3,7 +3,8 @@ import {
   LexicalComposer,
 } from "@lexical/react/LexicalComposer"
 import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin"
-import { EditorState, SerializedEditorState } from "lexical"
+import { $generateNodesFromDOM } from "@lexical/html"
+import { $getRoot, $insertNodes, EditorState, LexicalEditor, SerializedEditorState } from "lexical"
 
 import { editorTheme } from "@/components/editor/themes/editor-theme"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -11,36 +12,54 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { nodes } from "./nodes"
 import { Plugins } from "./plugins"
 
-const editorConfig: InitialConfigType = {
+const buildInitialConfig = (
+  editorState?: EditorState,
+  editorSerializedState?: SerializedEditorState,
+  initialHtml?: string,
+): InitialConfigType => ({
   namespace: "Editor",
   theme: editorTheme,
   nodes,
   onError: (error: Error) => {
     console.error(error)
   },
-}
+  ...(editorState ? { editorState } : {}),
+  ...(editorSerializedState
+    ? { editorState: JSON.stringify(editorSerializedState) }
+    : {}),
+  ...(initialHtml && !editorState && !editorSerializedState
+    ? {
+        editorState: (editor: LexicalEditor) => {
+          const parser = new DOMParser()
+          const dom = parser.parseFromString(initialHtml, "text/html")
+          const htmlNodes = $generateNodesFromDOM(editor, dom)
+          $getRoot().select()
+          $insertNodes(htmlNodes)
+        },
+      }
+    : {}),
+})
 
 export function Editor({
   editorState,
   editorSerializedState,
   onChange,
   onSerializedChange,
+  initialHtml,
+  editorKey,
 }: {
   editorState?: EditorState
   editorSerializedState?: SerializedEditorState
   onChange?: (editorState: EditorState) => void
   onSerializedChange?: (editorSerializedState: SerializedEditorState) => void
+  initialHtml?: string
+  editorKey?: string | number
 }) {
   return (
     <div className="bg-background flex h-full flex-col overflow-hidden rounded-lg border shadow">
       <LexicalComposer
-        initialConfig={{
-          ...editorConfig,
-          ...(editorState ? { editorState } : {}),
-          ...(editorSerializedState
-            ? { editorState: JSON.stringify(editorSerializedState) }
-            : {}),
-        }}
+        key={editorKey}
+        initialConfig={buildInitialConfig(editorState, editorSerializedState, initialHtml)}
       >
         <TooltipProvider>
           <Plugins />

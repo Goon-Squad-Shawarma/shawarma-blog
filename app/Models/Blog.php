@@ -67,6 +67,16 @@ class Blog extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function bookmarks(): HasMany
+    {
+        return $this->hasMany(Bookmark::class);
+    }
+
+    public function views(): HasMany
+    {
+        return $this->hasMany(BlogView::class);
+    }
+
     public function isDraft(): bool
     {
         return $this->published_at === null;

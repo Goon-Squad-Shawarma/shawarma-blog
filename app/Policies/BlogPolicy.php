@@ -89,4 +89,17 @@ class BlogPolicy
     {
         return $this->update($user, $blog);
     }
+
+    /**
+     * Determine if the user can view analytics for the blog.
+     */
+    public function viewAnalytics(User $user, Blog $blog): bool
+    {
+        if ($blog->organization_id === null) {
+            return $blog->user_id === $user->id;
+        }
+
+        return $user->hasRole($blog->organization, OrganizationRole::ADMIN) ||
+               $user->hasRole($blog->organization, OrganizationRole::EDITOR);
+    }
 }

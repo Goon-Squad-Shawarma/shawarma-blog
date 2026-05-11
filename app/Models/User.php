@@ -171,4 +171,9 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->organizations()->wherePivot('organization_id', $org->id)->wherePivot('role', $role->value)->exists();
     }
+
+    public function bookmarks(): HasMany
+    {
+        return $this->hasMany(Bookmark::class);
+    }
 }

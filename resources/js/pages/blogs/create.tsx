@@ -1,9 +1,10 @@
 import { Head, Link, useForm } from '@inertiajs/react'
-import { FormEvent } from 'react'
+import { FormEvent, useState } from 'react'
 import { SerializedEditorState } from 'lexical'
 import AppLayout from '@/layouts/app-layout'
 import type { BreadcrumbItem } from '@/types'
 import { index as blogsIndex, create as blogsCreate } from '@/routes/blogs'
+import { draft as aiDraft } from '@/routes/ai'
 import { Editor } from '@/components/blocks/editor-00/editor'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
@@ -11,11 +12,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import InputError from '@/components/input-error'
 import { format } from 'date-fns'
-import { CalendarIcon } from 'lucide-react'
+import { CalendarIcon, Sparkles } from 'lucide-react'
 import DateTimePicker from '@/components/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import TagSelector from '@/components/tag-selector'
 import BannerUpload from '@/components/file-upload'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Spinner } from '@/components/ui/spinner'
 
 interface Tag {
     id: number
@@ -60,6 +65,36 @@ export default function BlogCreate({ tags, organizations }: BlogCreateProps) {
         tags: [],
     })
 
+    const [aiOpen, setAiOpen] = useState(false)
+    const [aiTopic, setAiTopic] = useState('')
+    const [aiOutline, setAiOutline] = useState('')
+    const [aiLoading, setAiLoading] = useState(false)
+    const [aiHtml, setAiHtml] = useState<string | undefined>()
+    const [editorKey, setEditorKey] = useState(0)
+
+    const handleAiDraft = async () => {
+        setAiLoading(true)
+        try {
+            const res = await fetch(aiDraft().url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+                },
+                body: JSON.stringify({ topic: aiTopic, outline: aiOutline || undefined }),
+            })
+            const json = await res.json()
+            setData('title', json.title)
+            setAiHtml(json.content)
+            setEditorKey((k) => k + 1)
+            setAiOpen(false)
+            setAiTopic('')
+            setAiOutline('')
+        } finally {
+            setAiLoading(false)
+        }
+    }
+
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         post('/blogs')
@@ -68,6 +103,43 @@ export default function BlogCreate({ tags, organizations }: BlogCreateProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Create Blog" />
+
+            <Dialog open={aiOpen} onOpenChange={setAiOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Generate AI Draft</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="ai-topic">Topic <span className="text-destructive">*</span></Label>
+                            <Input
+                                id="ai-topic"
+                                value={aiTopic}
+                                onChange={(e) => setAiTopic(e.target.value)}
+                                placeholder="e.g. The best shawarma ingredients"
+                            />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label htmlFor="ai-outline">Outline <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                            <Textarea
+                                id="ai-outline"
+                                value={aiOutline}
+                                onChange={(e) => setAiOutline(e.target.value)}
+                                placeholder="Briefly describe the sections you want…"
+                                rows={4}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setAiOpen(false)} disabled={aiLoading}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleAiDraft} disabled={!aiTopic.trim() || aiLoading}>
+                            {aiLoading ? <><Spinner className="mr-2 size-4" /> Generating…</> : 'Generate'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             <form onSubmit={handleSubmit} className="flex h-[calc(100svh-4rem)] overflow-hidden">
                 {/* Editor — main canvas */}
@@ -95,6 +167,8 @@ export default function BlogCreate({ tags, organizations }: BlogCreateProps) {
 
                     <div className="flex min-h-0 flex-1 flex-col">
                         <Editor
+                            key={editorKey}
+                            initialHtml={aiHtml}
                             onSerializedChange={(value: SerializedEditorState) => setData('content', JSON.stringify(value))}
                         />
                         {errors.content && <InputError message={errors.content} className="mt-2" />}
@@ -176,6 +250,10 @@ export default function BlogCreate({ tags, organizations }: BlogCreateProps) {
                     </div>
 
                     <div className="mt-auto flex flex-col gap-2">
+                        <Button type="button" variant="outline" className="w-full" onClick={() => setAiOpen(true)}>
+                            <Sparkles className="mr-2 size-4" />
+                            AI Draft
+                        </Button>
                         <Button type="submit" disabled={processing} className="w-full">
                             {processing ? 'Publishing…' : 'Publish'}
                         </Button>
