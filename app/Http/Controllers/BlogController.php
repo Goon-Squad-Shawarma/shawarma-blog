@@ -56,7 +56,8 @@ class BlogController extends Controller
                 ->whereNotNull('published_at')
                 ->where('published_at', '>=', now()->subDays(7))
                 ->withCount(['likes', 'views'])
-                ->orderByRaw('(likes_count + views_count) DESC')
+                ->orderByDesc('likes_count')
+                ->orderByDesc('views_count')
                 ->limit(5)
                 ->with('user:id,first_name,last_name')
                 ->get(['id', 'title', 'slug', 'reading_time', 'user_id']),

@@ -30,7 +30,10 @@ class FeedController extends Controller
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now())
             ->whereNotIn('user_id', $followedUserIds)
-            ->whereNotIn('organization_id', $followedOrgIds->toArray())
+            ->where(function ($q) use ($followedOrgIds) {
+                $q->whereNull('organization_id')
+                    ->orWhereNotIn('organization_id', $followedOrgIds);
+            })
             ->with(['user:id,first_name,last_name,avatar_url,username', 'organization:id,name,slug', 'tags'])
             ->withCount(['likes', 'bookmarks', 'views'])
             ->latest('published_at')
